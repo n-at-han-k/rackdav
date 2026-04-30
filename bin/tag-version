@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative "../lib/caldav/version"
+
+version = Caldav::VERSION
+tag = "v#{version}"
+
+existing = `git tag -l #{tag}`.strip
+unless existing.empty?
+  abort "ERROR: Tag #{tag} already exists"
+end
+
+system("git tag #{tag}") || abort("ERROR: Failed to create tag #{tag}")
+
+puts "Tagged #{tag}"
+puts ""
+puts "To push the tag, run:"
+puts "  git push --tags"

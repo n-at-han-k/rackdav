@@ -1,0 +1,9 @@
+*.gem
+/.env
+/.direnv
+/node_modules
+/.bundle/
+/coverage/
+/pkg/
+/tmp/
+/vendor/bundle

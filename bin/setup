@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+echo "1/2 Installing bundle"
+bundle install
+
+echo "2/2 Updating .gitignore"
+sed -i '/^Gemfile.lock$/d' .gitignore
+sed -i '/^flake.lock$/d' .gitignore

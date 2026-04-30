@@ -1,0 +1,37 @@
+#
+# Test matching one of a multi-value parameter
+#
+# (Jonny1 has X-CUSTOMPARAM=HOME,WORK but "HOME" is not just a part but
+# an entire value ("equals") of a multi-value parameter
+#
+TYPE=REPORT
+
+HEADER=Accept: text/xml,application/xml
+HEADER=Content-Type: text/xml
+HEADER=Depth: 1
+
+AUTH=user5:user5
+
+# HEAD
+
+BEGINDATA
+<?xml version="1.0"?>
+<CARDDAV:addressbook-query xmlns:DAV="DAV:" xmlns:CARDDAV="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/">
+ <DAV:prop>
+  <DAV:getetag/>
+  <CARDDAV:address-data/>
+ </DAV:prop>
+ <CARDDAV:filter test="anyof">
+  <CARDDAV:prop-filter name="X-CUSTOMPROP" test="anyof">
+   <CARDDAV:param-filter name="X-CUSTOMPARAM">
+    <CARDDAV:text-match negate-condition="no" collation="i;unicode-casemap" match-type="equals">HOME</CARDDAV:text-match>
+   </CARDDAV:param-filter>
+  </CARDDAV:prop-filter>
+ </CARDDAV:filter>
+</CARDDAV:addressbook-query>
+ENDDATA
+
+REPLACE=_<getetag>"[0-9a-f]+"</getetag>_<getetag>some valid etag</getetag>_
+REPLACE=/^REV:.*$/REV:date/
+
+URL=http://regression.host/caldav.php/user5/addresses/

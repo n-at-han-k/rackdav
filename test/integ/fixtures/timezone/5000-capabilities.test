@@ -1,0 +1,7 @@
+#
+# Request timezone server capabilities
+#
+TYPE=GET
+HEAD
+
+URL=http://regression.host/tz.php?action=capabilities

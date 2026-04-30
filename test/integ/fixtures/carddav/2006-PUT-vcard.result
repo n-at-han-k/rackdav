@@ -1,0 +1,51 @@
+SQL executed successfully.
+DELETE FROM caldav_data WHERE caldav_data.dav_name ~ '/user1/addressbook/donald_kelly.vcf'
+
+HTTP/1.1 201 Created
+Date: Dow, 01 Jan 2000 00:00:00 GMT
+DAV: 1, 2, 3, access-control, calendar-access, calendar-schedule
+DAV: extended-mkcol, bind, addressbook, calendar-auto-schedule, calendar-proxy
+Content-Length: 0
+Content-Type: text/plain; charset="utf-8"
+
+
+SQL Query 1 Result:
+           dav_id: >1016<
+
+SQL Query 2 Result:
+        caladruri: >NULL<
+           caluri: >NULL<
+         dav_name: >/user1/addressbook/donald_kelly.vcf<
+    etag_not_null: >1<
+            fburl: >NULL<
+               fn: >Donald Kelly<
+                n: >Kelly;Donald;;;<
+         nickname: >NULL<
+             note: >NULL<
+              org: >Esposo Designs Ltd<
+     uid_not_null: >1<
+              url: >www.example.co.nz<
+          version: >2.1<
+
+SQL Query 3 Result:
+           box_no: ><
+          country: >New Zealand<
+         locality: >Newtown<
+         postcode: ><
+         property: >ADR:;;25 Rintoul St;Newtown;Wellington;;New Zealand<
+           region: >Wellington<
+   street_address: >25 Rintoul St<
+             type: >NULL<
+          unit_no: ><
+
+SQL Query 4 Result:
+              tel: >+64 2 1234-4321<
+             type: >cell<
+
+              tel: >+64 4 347 4747<
+             type: >work<
+
+SQL Query 5 Result:
+            email: >donald@example.co.nz<
+             type: >internet<
+

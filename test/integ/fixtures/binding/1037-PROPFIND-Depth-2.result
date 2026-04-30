@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<multistatus xmlns="DAV:" xmlns:C="http://calendarserver.org/ns/">
+ <response>
+  <href>/caldav.php/</href>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/home/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/addresses/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/base/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/calendar-proxy-read/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/calendar-proxy-write/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/resource1/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/resource1/home/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/resource1/addresses/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/resource2/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/resource2/home/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/resource2/addresses/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"XX"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+</multistatus>
+

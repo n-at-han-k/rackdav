@@ -1,0 +1,414 @@
+BEGIN:VCALENDAR
+PRODID:Meteomatics AG, Switzerland
+X-WR-CALNAME:dresden Wetter
+X-WR-TIMEZONE:Etc/UTC
+VERSION:2.0
+CALSCALE:GREGORIAN
+X-PUBLISHED-TTL:PT5M
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:7392849583-0-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240203
+DESCRIPTION: 0h -  3h:☁️ 🌡9°C \n
+  3h -  6h:☁️ 🌡9°C \n
+  6h -  9h:☁️ 🌡10°C \n
+  9h - 12h:☁️ 🌡10°C \n
+ 12h - 15h:☁️ 🌡10°C \n
+ 15h - 18h:☁️ 🌡10°C \n
+ 18h - 21h:🌧 🌡10°C 💧\n
+ 21h - 24h:🌧 🌡9°C 💧💧\n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌧  9°C / 11°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392859583-1-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240204
+DESCRIPTION: 0h -  3h:🌦 🌡9°C 💧\n
+  3h -  6h:🌧 🌡8°C 💧\n
+  6h -  9h:🌧 🌡8°C 💧\n
+  9h - 12h:☁️ 🌡8°C \n
+ 12h - 15h:🌧 🌡9°C 💧💧\n
+ 15h - 18h:🌧 🌡9°C 💧💧\n
+ 18h - 21h:🌧 🌡9°C 💧💧💧\n
+ 21h - 24h:🌧 🌡9°C 💧💧💧\n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌧  7°C / 11°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392869583-2-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240205
+DESCRIPTION: 0h -  3h:🌧 🌡10°C 💧💧\n
+  3h -  6h:🌧 🌡9°C 💧\n
+  6h -  9h:🌧 🌡9°C 💧💧\n
+  9h - 12h:🌧 🌡9°C 💧\n
+ 12h - 15h:☁️ 🌡9°C \n
+ 15h - 18h:⭐ 🌡10°C \n
+ 18h - 21h:⭐ 🌡10°C \n
+ 21h - 24h:⭐ 🌡9°C \n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌦  8°C / 11°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392879583-3-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240206
+DESCRIPTION: 0h -  3h:☁️ 🌡8°C \n
+  3h -  6h:☁️ 🌡7°C \n
+  6h -  9h:☁️ 🌡7°C \n
+  9h - 12h:☁️ 🌡7°C \n
+ 12h - 15h:☁️ 🌡8°C \n
+ 15h - 18h:☁️ 🌡9°C \n
+ 18h - 21h:☁️ 🌡9°C \n
+ 21h - 24h:☁️ 🌡9°C \n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:☁️  7°C / 9°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392889583-4-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240207
+DESCRIPTION: 0h -  3h:🌧 🌡9°C 💧\n
+  3h -  6h:🌧 🌡9°C 💧💧\n
+  6h -  9h:🌧 🌡9°C 💧\n
+  9h - 12h:☁️ 🌡9°C \n
+ 12h - 15h:☁️ 🌡10°C \n
+ 15h - 18h:🌧 🌡10°C 💧\n
+ 18h - 21h:🌧 🌡10°C 💧💧\n
+ 21h - 24h:🌧 🌡9°C 💧\n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌧  8°C / 11°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392899583-5-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240208
+DESCRIPTION: 0h -  3h:☁️ 🌡9°C \n
+  3h -  6h:🌧 🌡10°C 💧\n
+  6h -  9h:🌧 🌡9°C 💧💧\n
+  9h - 12h:🌧 🌡8°C 💧\n
+ 12h - 15h:🌧 🌡7°C 💧\n
+ 15h - 18h:🌧 🌡7°C 💧\n
+ 18h - 21h:☁️ 🌡9°C \n
+ 21h - 24h:☁️ 🌡10°C \n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌧  7°C / 10°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392909583-6-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240209
+DESCRIPTION: 0h -  3h:☁️ 🌡10°C \n
+  3h -  6h:☁️ 🌡10°C \n
+  6h -  9h:☁️ 🌡10°C \n
+  9h - 12h:☁️ 🌡11°C \n
+ 12h - 15h:🌧 🌡12°C 💧\n
+ 15h - 18h:🌧 🌡12°C 💧\n
+ 18h - 21h:🌧 🌡11°C 💧\n
+ 21h - 24h:☁️ 🌡11°C \n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌧  9°C / 13°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392919583-7-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240210
+DESCRIPTION: 0h -  3h:☁️ 🌡11°C \n
+  3h -  6h:☁️ 🌡10°C \n
+  6h -  9h:☁️ 🌡9°C \n
+  9h - 12h:☁️ 🌡9°C \n
+ 12h - 15h:☁️ 🌡10°C \n
+ 15h - 18h:☁️ 🌡9°C \n
+ 18h - 21h:☁️ 🌡8°C \n
+ 21h - 24h:☁️ 🌡8°C \n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:☁️  7°C / 11°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392929583-8-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240211
+DESCRIPTION: 0h -  3h:☁️ 🌡7°C \n
+  3h -  6h:☁️ 🌡7°C \n
+  6h -  9h:☁️ 🌡7°C \n
+  9h - 12h:☁️ 🌡7°C \n
+ 12h - 15h:🌧 🌡8°C 💧\n
+ 15h - 18h:🌧 🌡7°C 💧\n
+ 18h - 21h:🌧 🌡6°C 💧💧\n
+ 21h - 24h:🌧 🌡5°C 💧💧\n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌧  5°C / 9°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392939583-9-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240212
+DESCRIPTION: 0h -  3h:🌧 🌡5°C 💧\n
+  3h -  6h:🌧 🌡4°C 💧\n
+  6h -  9h:🌧 🌡4°C 💧💧\n
+  9h - 12h:🌧 🌡4°C 💧💧\n
+ 12h - 15h:🌧 🌡4°C 💧💧\n
+ 15h - 18h:🌧 🌡3°C 💧💧\n
+ 18h - 21h:🌧 🌡3°C 💧\n
+ 21h - 24h:☁️ 🌡3°C \n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌧  2°C / 5°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392949583-10-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240213
+DESCRIPTION: 0h -  3h:☁️ 🌡1°C \n
+  3h -  6h:☁️ 🌡-1°C \n
+  6h -  9h:🌥 🌡-1°C \n
+  9h - 12h:🌤 🌡-0°C \n
+ 12h - 15h:🌞 🌡2°C \n
+ 15h - 18h:🌟 🌡3°C \n
+ 18h - 21h:🌟 🌡2°C \n
+ 21h - 24h:🌟 🌡0°C \n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌥  -2°C / 4°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392959583-11-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240214
+DESCRIPTION: 0h -  3h:🌟 🌡-0°C \n
+  3h -  6h:🌟 🌡-1°C \n
+  6h -  9h:🌞 🌡-0°C \n
+  9h - 12h:🌞 🌡2°C \n
+ 12h - 15h:🌞 🌡5°C \n
+ 15h - 18h:🌟 🌡6°C \n
+ 18h - 21h:🌟 🌡4°C \n
+ 21h - 24h:⭐ 🌡2°C \n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌞  -1°C / 7°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392969583-12-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240215
+DESCRIPTION: 0h -  3h:🌧 🌡2°C 💧💧\n
+  3h -  6h:☂️ 🌡2°C ☂️\n
+  6h -  9h:🌨 🌡2°C ❄️\n
+  9h - 12h:🌨 🌡2°C ❄️\n
+ 12h - 15h:🌨 🌡2°C ❄️\n
+ 15h - 18h:🌨 🌡2°C ❄️\n
+ 18h - 21h:🌨 🌡2°C ❄️\n
+ 21h - 24h:🌨 🌡1°C ❄️\n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌨  0°C / 2°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392979583-13-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240216
+DESCRIPTION: 0h -  3h:🌨 🌡0°C ❄️❄️\n
+  3h -  6h:🌨 🌡-0°C ❄️\n
+  6h -  9h:🌨 🌡-1°C ❄️\n
+  9h - 12h:☁️ 🌡-1°C \n
+ 12h - 15h:🌥 🌡0°C \n
+ 15h - 18h:🌨 🌡1°C ❄️❄️\n
+ 18h - 21h:🌨 🌡-1°C ❄️\n
+ 21h - 24h:🌨 🌡-3°C ❄️\n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌨  -4°C / 2°C
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:7392989583-14-51050-13737
+SEQUENCE:1
+CLASS:PUBLIC
+CREATED:20200101T000000Z
+GEO:51.0504;13.7373
+DTSTAMP:20240203T124353Z
+DTSTART;VALUE=DATE:20240217
+DESCRIPTION: 0h -  3h:🌨 🌡-3°C ❄️\n
+  3h -  6h:🌨 🌡-3°C ❄️\n
+  6h -  9h:🌨 🌡-3°C ❄️\n
+  9h - 12h:🌨 🌡-2°C ❄️\n
+ 12h - 15h:🌨 🌡-1°C ❄️\n
+ 15h - 18h:☁️ 🌡-2°C \n
+ 18h - 21h:🌟 🌡-4°C \n
+ 21h - 24h:🌟 🌡-7°C \n
+ Letzte Aktualisierung:\n2024-02-03 13:43:53\n\n
+ Die Prognose wird durch die Meteomatics 
+ Wetter-API bereitgestellt.\n\n
+ Kontaktieren Sie sales@meteomatics.com für Ihr 
+ individuelles Wetter-API Angebot.
+LOCATION:Dresden
+URL:https://www.meteomatics.com
+STATUS:CONFIRMED
+SUMMARY:🌨  -8°C / -0°C
+TRANSP:TRANSPARENT
+END:VEVENT
+END:VCALENDAR

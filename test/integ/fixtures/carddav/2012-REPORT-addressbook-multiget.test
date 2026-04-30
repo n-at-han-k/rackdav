@@ -1,0 +1,28 @@
+#
+# addressbook-multiget REPORT on addressbook resource
+#
+TYPE=REPORT
+HEADER=User-Agent: DAViCalTester/public
+HEADER=Content-Type: text/xml
+HEAD
+
+
+BEGINDATA
+<?xml version="1.0" encoding="utf-8" ?>
+<C:addressbook-multiget xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav">
+ <D:prop>
+  <D:getetag/>
+  <C:address-data/>
+ </D:prop>
+ <D:href>/caldav.php/user1/addressbook/strumar_and_beren.txt</D:href>
+ <D:href>/caldav.php/user1/addressbook/andrew_mcmillan.vcf</D:href>
+ <D:href>/caldav.php/user1/addressbook/donald_kelly.vcf</D:href>
+</C:addressbook-multiget>
+ENDDATA
+
+REPLACE=/<get.tag>"[0-9a-f]{32}"<.get.tag>/<get?tag>"deadbeefcafef00ddeadbeefcafefeed"<.get?tag>/
+REPLACE=/UID:.+/UID:excellent-looking-uid-string/
+REPLACE=/REV:\d{8}T\d{6}Z/REV:YYYYMMDDTHHMMSSZ/
+REPLACE=/^ETag: "[0-9a-f]+"\s$/ETag: "a fine looking etag"/
+
+URL=http://regression.host/caldav.php/user1/addressbook/

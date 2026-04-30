@@ -2,11 +2,13 @@ PATH
   remote: .
   specs:
     caldav (0.1.1)
+      rack (~> 3.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.3)
+    base64 (0.3.0)
     json (2.19.4)
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
@@ -17,6 +19,11 @@ GEM
       racc
     prism (1.9.0)
     racc (1.8.1)
+    rack (3.2.6)
+    rack-test (2.2.0)
+      rack (>= 1.3)
+    rackup (2.3.1)
+      rack (>= 3)
     rainbow (3.1.1)
     rake (13.4.2)
     regexp_parser (2.12.0)
@@ -38,16 +45,21 @@ GEM
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
+    webrick (1.9.2)
 
 PLATFORMS
   ruby
   x86_64-linux
 
 DEPENDENCIES
+  base64
   caldav!
   minitest (~> 5.0)
+  rack-test (~> 2.0)
+  rackup (~> 2.3)
   rake (~> 13.0)
   rubocop (~> 1.21)
+  webrick (~> 1.9)
 
 BUNDLED WITH
    2.6.9

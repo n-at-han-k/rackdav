@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<multistatus xmlns="DAV:" xmlns:VC="urn:ietf:params:xml:ns:carddav">
+ <response>
+  <href>/caldav.php/user1/addressbook/andrew_mcmillan.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+VERSION:3.0
+TEL;X-EVOLUTION-UI-SLOT=3;TYPE=CELL:+64 22 123 4567
+TEL;X-EVOLUTION-UI-SLOT=2;TYPE=HOME,VOICE:+64 4 123 4567
+TEL;X-EVOLUTION-UI-SLOT=1;TYPE=WORK,VOICE:+64 22 123 4567
+EMAIL;X-EVOLUTION-UI-SLOT=2;TYPE=HOME:andrew@mcmillan.net.nz
+EMAIL;X-EVOLUTION-UI-SLOT=1;TYPE=WORK:andrew@morphoss.com
+FN:Andrew Watson McMillan
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/donald_kelly.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+FN:Donald Kelly
+EMAIL;TYPE=internet:donald@example.co.nz
+TEL;TYPE=work:+64 4 347 4747
+TEL;TYPE=cell:+64 2 1234-4321
+VERSION:2.1
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/F06EC844-EACD-4ADF-8823-588603991E04-ABSPlugin.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+VERSION:3.0
+FN:Morphoss Ltd
+EMAIL;TYPE=INTERNET;TYPE=WORK;TYPE=pref:andrew+davical@morphoss.com
+TEL;TYPE=WORK;TYPE=pref:+64272332426
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/van_houtte.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+VERSION:3.0
+FN:Vincent VAN HOUTTE
+TEL;TYPE=CELL,VOICE:0486 11 22 33
+TEL;TYPE=HOME,VOICE:052 11 22 33
+TEL;TYPE=HOME,FAX:052 44 55 66
+EMAIL;TYPE=HOME:vvh@gmail.no
+TEL;TYPE=WORK,VOICE:052 11 22 33
+TEL;TYPE=WORK,FAX:052 44 55 66
+EMAIL;TYPE=WORK:vvh@gmail.no
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/mustrmahn.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+VERSION:3.0
+FN:Überwerbung GmbH
+EMAIL;TYPE=INTERNET;TYPE=WORK;TYPE=pref:karl@mustermann.de
+TEL;TYPE=WORK;TYPE=pref:+49 30 1234567
+TEL;TYPE=CELL:+49 172 1234567
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/andresenesq.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+VERSION:4.0
+FN:Sven Joseph Klaus Michael Andresen\, Esq.
+EMAIL;TYPE=INTERNET:sven@andresen.de
+EMAIL;TYPE=INTERNET:andresen@andresen.de
+TEL;TYPE=WORK,VOICE:+49 89 11 11 111
+TEL;TYPE=WORK,VOICE:+49 234 222 222
+TEL;TYPE=WORK,FAX:+49 7373 73
+TEL;TYPE=PAGER:+49 160 073 727 272
+TEL;TYPE=PAGER:+49 2626 26
+TEL;TYPE=CELL,VOICE:+49 39292 82
+TEL;TYPE=CELL,VOICE:+49 7272 722
+TEL;TYPE=PREF,VOICE:+49 12 34 567
+TEL;TYPE=CAR,VOICE:+49 8292 38 383
+TEL;TYPE=HOME,VOICE:+49 7327 272 727
+TEL;TYPE=HOME,VOICE:+49 7272 7282
+TEL;TYPE=HOME,FAX:+49 1010 1
+TEL;TYPE=ISDN:8797
+TEL;TYPE=ISDN:98732947234
+TEL;TYPE=X-EVOLUTION-RADIO:+49 88 298 723 498 32
+TEL;TYPE=X-EVOLUTION-RADIO:+49 9872 394 872 34
+TEL;TYPE=X-EVOLUTION-TELEX:+49 2763 382 882 28 82
+TEL;TYPE=X-EVOLUTION-TELEX:+49 7722 88 28 282
+TEL;TYPE=MAIN:+49 6237 623 723 84 76
+TEL;TYPE=MAIN:+49 9324 32 479 234234
+TEL;X-EVOLUTION-CALLBACK:+49 8383 73 723
+TEL;X-EVOLUTION-CALLBACK:+49 7363 6363
+TEL;TYPE=MODEM:+49 8383 73 723
+TEL;TYPE=MODEM:+49 7363 6363
+TEL;X-EVOLUTION-TTYTDD:+49 3377 37 373
+TEL;X-EVOLUTION-TTYTDD:+49 8378 33
+TEL;X-QUICKDIAL:13355
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/hans_dieter.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+VERSION:4.0
+FN:Hans Dieter Schmidt
+EMAIL;TYPE=INTERNET:ich@hadi-schmidt.de
+EMAIL;TYPE=INTERNET:hadi@telekom-d.de
+TEL;TYPE=WORK,VOICE:+49 9823 9084
+TEL;TYPE=WORK,VOICE:+49 234 234 234
+TEL;TYPE=WORK,FAX:+49 7373 73
+TEL;TYPE=PAGER:+49 2626 26
+TEL;TYPE=CELL,VOICE:+49 7272 722
+TEL;TYPE=PREF,VOICE:+49 12 34 567
+TEL;TYPE=CAR,VOICE:+49 8292 38 383
+TEL;TYPE=HOME,VOICE:+49 7327 272 727
+TEL;TYPE=HOME,FAX:+49 40 812 387 21
+TEL;TYPE=ISDN:4234234235
+TEL;TYPE=ISDN:98732947234
+TEL;TYPE=X-EVOLUTION-RADIO:+49 9872 349 832
+TEL;TYPE=X-EVOLUTION-RADIO:+49 9872 394 872 34
+TEL;TYPE=X-EVOLUTION-TELEX:+49 38 288 228 82
+TEL;TYPE=X-EVOLUTION-TELEX:+49 7722 88 28 282
+TEL;TYPE=MAIN:+49 6237 623 723 84 76
+TEL;TYPE=MAIN:+49 9324 32 479 234234
+TEL;X-EVOLUTION-CALLBACK:+49 8383 73 723
+TEL;TYPE=MODEM:+49 8383 73 723
+TEL;X-EVOLUTION-TTYTDD:+49 7373 73
+TEL;X-EVOLUTION-TTYTDD:+49 8378 33
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/J%C3%B6rg_Test-Ro%C3%9Fdeutscher_3_0.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+VERSION:3.0
+FN:Jörg Test-Roßdeutscher
+EMAIL;TYPE=INTERNET;TYPE=WORK;TYPE=pref:
+ joerg.rossdeutscher@factordesign.foo
+EMAIL;TYPE=INTERNET;TYPE=WORK:joerg@factordesign.foo
+EMAIL;TYPE=INTERNET;TYPE=HOME:joerg.rossdeutscher@gesindel.foo
+EMAIL;TYPE=INTERNET;TYPE=HOME:raettchen@gmail.bar
+TEL;TYPE=WORK;TYPE=pref:040 999999432571-43
+TEL;TYPE=CELL:017799999978200
+TEL;TYPE=HOME:040999999793017
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/test_multiple_email.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+VERSION:4.0
+FN:CardDavClient Test212420682
+EMAIL;TYPE=HOME:john6doe@example.com
+EMAIL;TYPE=WORK:doe6@example.com
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+</multistatus>
+

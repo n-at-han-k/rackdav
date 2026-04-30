@@ -1,0 +1,65 @@
+HTTP/1.1 201 Created
+Date: Dow, 01 Jan 2000 00:00:00 GMT
+DAV: 1, 2, 3, access-control, calendar-access, calendar-schedule
+DAV: extended-mkcol, bind, addressbook, calendar-auto-schedule, calendar-proxy
+Content-Length: 0
+Content-Type: text/plain; charset="utf-8"
+
+
+SQL Query 1 Result:
+        caladruri: >NULL<
+           caluri: >NULL<
+         dav_name: >/user1/addressbook/van_houtte.vcf<
+            fburl: >NULL<
+               fn: >Vincent VAN HOUTTE<
+                n: >VAN HOUTTE;Vincent;;Dhr.;<
+         nickname: >NULL<
+             note: >NULL<
+              org: >Advocatenkantoor Suy, Van Baeveghem & Van Houtte;;<
+              url: >NULL<
+          version: >3.0<
+
+SQL Query 2 Result:
+           box_no: ><
+          country: >NULL<
+         locality: >DENDERMONDE<
+         postcode: >B-9200<
+         property: >ADR;TYPE=HOME:;;Brusselsestraat 108;DENDERMONDE;;B-9200<
+           region: ><
+   street_address: >Brusselsestraat 108<
+             type: >HOME<
+          unit_no: ><
+
+           box_no: ><
+          country: >NULL<
+         locality: >DENDERMONDE<
+         postcode: >B-9200<
+         property: >ADR;TYPE=WORK:;;Brusselsestraat 108;DENDERMONDE;;B-9200<
+           region: ><
+   street_address: >Brusselsestraat 108<
+             type: >WORK<
+          unit_no: ><
+
+SQL Query 3 Result:
+              tel: >0486 11 22 33<
+             type: >CELL,VOICE<
+
+              tel: >052 44 55 66<
+             type: >HOME,FAX<
+
+              tel: >052 11 22 33<
+             type: >HOME,VOICE<
+
+              tel: >052 44 55 66<
+             type: >WORK,FAX<
+
+              tel: >052 11 22 33<
+             type: >WORK,VOICE<
+
+SQL Query 4 Result:
+            email: >vvh@gmail.no<
+             type: >HOME<
+
+            email: >vvh@gmail.no<
+             type: >WORK<
+

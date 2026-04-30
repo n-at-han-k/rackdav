@@ -1,0 +1,7 @@
+The database is version XX currently at revision 1.3.6.
+No patches were applied.
+Supported locales updated.
+Updated view: dav_principal.sql applied.
+CalDAV functions updated.
+RRULE functions updated.
+Database permissions updated.

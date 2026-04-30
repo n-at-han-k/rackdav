@@ -1,0 +1,23 @@
+#
+# Check for support of REPORT sync-collection with no sync-token
+#
+TYPE=REPORT
+HEADER=User-agent: sync-collection initial REPORT
+HEADER=Content-type: text/xml
+HEAD
+
+BEGINDATA
+<?xml version="1.0" encoding="utf-8" ?>
+<D:sync-collection xmlns:D="DAV:">
+  <D:sync-token/>
+  <D:prop>
+    <D:getetag/>
+    <D:getcontenttype/>
+  </D:prop>
+</D:sync-collection>
+ENDDATA
+
+REPLACE=/<get.tag>"[0-9a-f]{32}"<.get.tag>/<get?tag>"deadbeefcafef00ddeadbeefcafefeed"<.get?tag>/
+REPLACE=/^ETag: "[0-9a-f]+"\s$/ETag: "a fine looking etag"/
+
+URL=http://regression.host/caldav.php/user1/addressbook/

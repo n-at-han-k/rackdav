@@ -1,0 +1,16 @@
+HTTP/1.1 201 Created
+Date: Dow, 01 Jan 2000 00:00:00 GMT
+DAV: 1, 2, 3, access-control, calendar-access, calendar-schedule
+DAV: extended-mkcol, bind, addressbook, calendar-auto-schedule, calendar-proxy
+Content-Length: 0
+Content-Type: text/plain; charset="utf-8"
+
+
+SQL Query 1 Result:
+          bind_id: >1058<
+  bound_source_id: >1057<
+  dav_displayname: >Moon<
+         dav_name: >/teamclient1/Moon/<
+     external_url: >http://regression/testfiles/mooncal.ics?lang=de&phases%5Bfull%5D=true&phases%5Bnew%5D=true&phases%5Bquarter%5D=true&phases%5Bdaily%5D=false&events%5Blunareclipse%5D=true&events%5Bsolareclipse%5D=true&events%5Bmoonlanding%5D=false&before=P6M&after=P2Y&zone=CET<
+ parent_container: >/teamclient1/<
+

@@ -1,0 +1,31 @@
+#
+# PROPFIND on addressbook resource
+# Depth 1 this time, and looking for getetag
+#
+TYPE=PROPFIND
+HEADER=User-Agent: DAViCalTester/public
+HEADER=Content-Type: text/xml
+HEADER=Depth: 1
+# HEAD
+
+
+BEGINDATA
+<?xml version="1.0" encoding="UTF-8" ?>
+<propfind xmlns="DAV:">
+ <prop>
+  <getetag/>
+  <getlastmodified/>
+ </prop>
+</propfind>
+ENDDATA
+
+REPLACE=/<get.tag>"[0-9a-f]{32}"<.get.tag>/<get?tag>"deadbeefcafef00ddeadbeefcafefeed"<.get?tag>/
+
+URL=http://regression.host/caldav.php/user1/addressbook/
+
+QUERY
+SELECT count(1)
+FROM collection LEFT JOIN caldav_data USING(collection_id)
+WHERE collection.dav_name = '/user1/addressbook/'
+ENDQUERY
+

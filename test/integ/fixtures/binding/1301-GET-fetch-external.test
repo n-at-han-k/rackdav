@@ -1,0 +1,16 @@
+#
+# Fetch the contents of an "external" resource
+#
+# This also tests Unicode as the phase of the moon is included in the summary.
+#
+
+TYPE=GET
+AUTH=user1:user1
+
+HEADER=User-Agent: DAViCalTester/public
+HEAD
+
+BEGINDATA
+ENDDATA
+
+URL=http://regression.host/caldav.php/teamclient1/Moon

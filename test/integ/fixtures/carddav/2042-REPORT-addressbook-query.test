@@ -1,0 +1,51 @@
+#
+# Request a REPORT
+#
+# param-filter should filter on parameter value. With a negated
+# null value we should return all vCards with the property that
+# matches the prop-filter type, and where there is a parameter
+# of TYPE set.
+#
+# NOTE: This test does not do what one would think it does!
+# Testing if a parameter is-defined (is not NULL) is the default case
+# and can be achieved with just an empty param-filter, like
+#   <C:param-filter name="TYPE"/>
+# However searching for an empty string within another string (as
+# opposed to testing whether they are equal) should always succeed, and
+# negating that will always fail, hence this test should return no
+# results.
+#
+TYPE=REPORT
+
+HEADER=Accept: text/xml,application/xml
+HEADER=Content-Type: text/xml
+HEADER=Depth: 1
+
+# HEAD
+
+BEGINDATA
+<?xml version="1.0"?>
+<C:addressbook-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/">
+ <D:prop>
+  <D:getetag/>
+  <C:address-data>
+    <C:prop name="VERSION"/>
+    <C:prop name="FN"/>
+    <C:prop name="TEL"/>
+  </C:address-data>
+ </D:prop>
+ <C:filter>
+  <C:prop-filter name="TEL">
+   <C:param-filter name="TYPE">
+    <C:text-match name="TYPE" negate-condition="yes"></C:text-match>
+   </C:param-filter>
+  </C:prop-filter>
+ </C:filter>
+</C:addressbook-query>
+ENDDATA
+
+REPLACE=_<getetag>"[0-9a-f]+"</getetag>_<getetag>some valid etag</getetag>_
+REPLACE=/^REV:.*$/REV:date/
+REPLACE=/^UID:.*$/UID:a nice UID/
+
+URL=http://regression.host/caldav.php/user1/addressbook/

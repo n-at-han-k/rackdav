@@ -1,0 +1,22 @@
+
+
+Supported locales updated.
+Updated view: dav_principal.sql applied.
+CalDAV functions updated.
+RRULE functions updated.
+Database permissions updated.
+The database is version XX currently at revision 1.3.5.
+Applying patch 1.3.6.sql ... succeeded.
+Successfully applied 1 patches.
+Supported locales updated.
+Updated view: dav_principal.sql applied.
+CalDAV functions updated.
+RRULE functions updated.
+Database permissions updated.
+NOTE
+====
+*  The password for the 'admin' user has been set to 'nimda'
+
+Thanks for trying DAViCal! Check the configuration in /etc/davical/config.php.
+For help, look at our website and wiki, or visit #davical on irc.oftc.net.
+

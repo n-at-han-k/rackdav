@@ -1,0 +1,33 @@
+#
+# Test for non-existence of a grouped property (case-insensitive)
+#
+# (Jonny3 has item1.EMAIL set)
+#
+TYPE=REPORT
+
+HEADER=Accept: text/xml,application/xml
+HEADER=Content-Type: text/xml
+HEADER=Depth: 1
+
+AUTH=user5:user5
+
+# HEAD
+
+BEGINDATA
+<CARDDAV:addressbook-query xmlns:DAV="DAV:" xmlns:CARDDAV="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/">
+ <DAV:prop>
+  <DAV:getetag/>
+  <CARDDAV:address-data/>
+ </DAV:prop>
+ <CARDDAV:filter test="anyof">
+  <CARDDAV:prop-filter name="item1.EMAIL" test="anyof">
+   <CARDDAV:is-not-defined/>
+  </CARDDAV:prop-filter>
+ </CARDDAV:filter>
+</CARDDAV:addressbook-query>
+ENDDATA
+
+REPLACE=_<getetag>"[0-9a-f]+"</getetag>_<getetag>some valid etag</getetag>_
+REPLACE=/^REV:.*$/REV:date/
+
+URL=http://regression.host/caldav.php/user5/addresses/

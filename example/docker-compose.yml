@@ -1,0 +1,11 @@
+services:
+  caldav:
+    build:
+      context: ..
+      dockerfile: example/Dockerfile
+    ports:
+      - "9292:9292"
+    volumes:
+      - ..:/app
+    working_dir: /app/example
+    command: bundle exec falcon serve --bind http://0.0.0.0:9292

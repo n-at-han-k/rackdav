@@ -1,0 +1,25 @@
+HTTP/1.1 200 OK
+Date: Dow, 01 Jan 2000 00:00:00 GMT
+Content-Location: /caldav.php/user3/
+DAV: 1, 2, 3, access-control, calendar-access, calendar-schedule
+DAV: extended-mkcol, bind, addressbook, calendar-auto-schedule, calendar-proxy
+Etag: "0ee82db4275e01bc6cca4de752ae50ad"
+Content-Length: 323
+Content-Type: text/calendar; charset="utf-8"
+
+BEGIN:VCALENDAR
+PRODID:-//davical.org//NONSGML AWL Calendar//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+X-WR-CALNAME:User 3
+BEGIN:VEVENT
+SUMMARY:Busy
+CLASS:CONFIDENTIAL
+DTSTART:20100322T160000
+SEQUENCE:1
+DTEND:20100322T170000
+UID:ignore_uid
+CREATED:20100319T103247Z
+END:VEVENT
+END:VCALENDAR
+

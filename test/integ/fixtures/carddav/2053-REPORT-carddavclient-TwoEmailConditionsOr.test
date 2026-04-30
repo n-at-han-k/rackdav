@@ -1,0 +1,40 @@
+#
+# Request a REPORT for a property which satisfies any of two text-match
+# conditions, only one of which actually matches
+#
+# (this must return both Jonny0 and Jonny1)
+#
+TYPE=REPORT
+
+HEADER=Accept: text/xml,application/xml
+HEADER=Content-Type: text/xml
+HEADER=Depth: 1
+
+AUTH=user5:user5
+
+# HEAD
+
+BEGINDATA
+<?xml version="1.0"?>
+<CARDDAV:addressbook-query xmlns:DAV="DAV:" xmlns:CARDDAV="urn:ietf:params:xml:ns:carddav" xmlns:CS="http://calendarserver.org/ns/">
+ <DAV:prop>
+  <DAV:getetag/>
+  <CARDDAV:address-data>
+    <CARDDAV:prop name="VERSION"/>
+    <CARDDAV:prop name="FN"/>
+    <CARDDAV:prop name="EMAIL"/>
+  </CARDDAV:address-data>
+ </DAV:prop>
+ <CARDDAV:filter test="anyof">
+  <CARDDAV:prop-filter name="EMAIL" test="anyof">
+   <CARDDAV:text-match negate-condition="no" collation="i;unicode-casemap" match-type="starts-with">doe</CARDDAV:text-match>
+   <CARDDAV:text-match negate-condition="no" collation="i;unicode-casemap" match-type="ends-with">abcd.com</CARDDAV:text-match>
+  </CARDDAV:prop-filter>
+ </CARDDAV:filter>
+</CARDDAV:addressbook-query>
+ENDDATA
+
+REPLACE=_<getetag>"[0-9a-f]+"</getetag>_<getetag>some valid etag</getetag>_
+REPLACE=/^REV:.*$/REV:date/
+
+URL=http://regression.host/caldav.php/user5/addresses/

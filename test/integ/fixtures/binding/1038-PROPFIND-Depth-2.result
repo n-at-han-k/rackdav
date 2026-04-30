@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<multistatus xmlns="DAV:" xmlns:C="http://calendarserver.org/ns/">
+ <response>
+  <href>/caldav.php/user4/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"b3be0ab4edeb183646203b994f8d6869"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"b644b2983f30cb7ae5ab28db464b601e"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/33169d69-2969-4a96-a3e1-2e312b7614e6.ics</href>
+  <propstat>
+   <prop/>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/047871e3-6b70-4178-9af8-0ceb50f7b092.ics</href>
+  <propstat>
+   <prop/>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/9429a973-2b13-4b1a-be09-948d75425c45.ics</href>
+  <propstat>
+   <prop/>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/7d729xc0-0895-012d-124e-002421a2359e.ics</href>
+  <propstat>
+   <prop/>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/bd262d20-1cdb-012d-1264-002421a2359e.ics</href>
+  <propstat>
+   <prop/>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/56f0e0e0-f742-012d-680c-002421a2359e.ics</href>
+  <propstat>
+   <prop/>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/thiswillworkfine.ics</href>
+  <propstat>
+   <prop/>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/thiswillalsobegood.ics</href>
+  <propstat>
+   <prop/>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/user2/70399cd7-50a4-4be4-a665-af593e19a7fd.ics</href>
+  <propstat>
+   <prop/>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <C:getctag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/home/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"3f02ebe3d7929b091e3d8ccfde2f3bc6"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/addresses/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"3f02ebe3d7929b091e3d8ccfde2f3bc6"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/base/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"ae93907cb03bc025b8e733eb61f3a09e"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/base/user2/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"b644b2983f30cb7ae5ab28db464b601e"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/base/calendar/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"5723e68d4eaef520f2b18370874914f1"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/base/newcalendar/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"cb0b91b58d99fd869355038c35be73a0"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/calendar-proxy-read/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"ce203d86180ffe895ef680221aa4050c"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user4/calendar-proxy-write/</href>
+  <propstat>
+   <prop>
+    <C:getctag>"31965770b06ebd0def7b1afe08ba2a39"</C:getctag>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+</multistatus>
+

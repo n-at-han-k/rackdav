@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<multistatus xmlns="DAV:" xmlns:VC="urn:ietf:params:xml:ns:carddav">
+ <response>
+  <href>/caldav.php/user1/addressbook/test_multiple_email.vcf</href>
+  <propstat>
+   <prop>
+    <getetag>some valid etag</getetag>
+    <VC:address-data>BEGIN:VCARD
+VERSION:4.0
+PRODID:-//Sabre//Sabre VObject 4.3.3//EN
+UID:sabre-vobject-131cdf91-5460-423b-a836-e420e5affe13
+FN:CardDavClient Test212420682
+N:Test212420682;CardDavClient;;;
+EMAIL;TYPE=HOME:john6doe@example.com
+EMAIL;TYPE=WORK:doe6@example.com
+REV:date
+END:VCARD
+</VC:address-data>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+</multistatus>
+

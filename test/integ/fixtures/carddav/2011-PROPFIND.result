@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<multistatus xmlns="DAV:">
+ <response>
+  <href>/caldav.php/user1/addressbook/</href>
+  <propstat>
+   <prop>
+    <getlastmodified>Dow, 01 Jan 2000 00:00:00 GMT</getlastmodified>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+  <propstat>
+   <prop>
+    <getetag/>
+   </prop>
+   <status>HTTP/1.1 404 Not Found</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/andrew_mcmillan.vcf</href>
+  <propstat>
+   <prop>
+    <get?tag>"deadbeefcafef00ddeadbeefcafefeed"<.get?tag>
+    <getlastmodified>Dow, 01 Jan 2000 00:00:00 GMT</getlastmodified>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/donald_kelly.vcf</href>
+  <propstat>
+   <prop>
+    <get?tag>"deadbeefcafef00ddeadbeefcafefeed"<.get?tag>
+    <getlastmodified>Dow, 01 Jan 2000 00:00:00 GMT</getlastmodified>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+ <response>
+  <href>/caldav.php/user1/addressbook/PHRsMa4mvY.vcf</href>
+  <propstat>
+   <prop>
+    <get?tag>"deadbeefcafef00ddeadbeefcafefeed"<.get?tag>
+    <getlastmodified>Dow, 01 Jan 2000 00:00:00 GMT</getlastmodified>
+   </prop>
+   <status>HTTP/1.1 200 OK</status>
+  </propstat>
+ </response>
+</multistatus>
+
+SQL Query 1 Result:
+            count: >3<
+

@@ -1,0 +1,51 @@
+HTTP/1.1 201 Created
+Date: Dow, 01 Jan 2000 00:00:00 GMT
+DAV: 1, 2, 3, access-control, calendar-access, calendar-schedule
+DAV: extended-mkcol, bind, addressbook, calendar-auto-schedule, calendar-proxy
+Content-Length: 0
+Content-Type: text/plain; charset="utf-8"
+
+
+SQL Query 1 Result:
+        caladruri: >mailto:andrew@morphoss.com<
+           caluri: >https://dotcal.com/karora<
+         dav_etag: >a81fa8394d866e6037ea426554663e4c<
+         dav_name: >/user1/addressbook/andrew_mcmillan.vcf<
+            fburl: >https://davical.morphoss.com/freebusy.php/andrew@morphoss.com<
+               fn: >Andrew Watson McMillan<
+                n: >McMillan;Andrew;Watson;;<
+         nickname: >karora<
+             note: >Primary author of DAViCal CalDAV Server.<
+              org: >dotCal;;Porirua<
+              uid: >pas-id-4BB0719600000000<
+              url: >http://andrew.mcmillan.net.nz/<
+          version: >3.0<
+
+SQL Query 2 Result:
+           box_no: ><
+          country: >New Zealand<
+         locality: >Porikana<
+         postcode: >4173<
+         property: >ADR;TYPE=HOME:;;16 Kaka Place;Porikana;;4173;New Zealand<
+           region: ><
+   street_address: >16 Kaka Place<
+             type: >HOME<
+          unit_no: ><
+
+SQL Query 3 Result:
+              tel: >+64 22 123 4567<
+             type: >WORK,VOICE<
+
+              tel: >+64 4 123 4567<
+             type: >HOME,VOICE<
+
+              tel: >+64 22 123 4567<
+             type: >CELL<
+
+SQL Query 4 Result:
+            email: >andrew@morphoss.com<
+             type: >WORK<
+
+            email: >andrew@mcmillan.net.nz<
+             type: >HOME<
+

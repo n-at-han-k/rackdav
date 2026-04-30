@@ -3,10 +3,10 @@ set -euo pipefail
 
 # Integration tests -- hits the real server with curl, validates full XML responses.
 # Expects the server running at BASE_URL (default http://localhost:9292)
-# with basic auth admin:admin.
+# with forward auth (Remote-User header).
 
 BASE_URL="${BASE_URL:-http://localhost:9292}"
-AUTH="admin:admin"
+AUTH_HEADER="Remote-User: admin"
 PASS=0
 FAIL=0
 ERRORS=""
@@ -119,7 +119,7 @@ dav() {
   local method="$1"
   local path="$2"
   shift 2
-  curl -s -o /dev/null -w '%{http_code}' -X "$method" -u "$AUTH" "$@" "${BASE_URL}${path}" 2>/dev/null || true
+  curl -s -o /dev/null -w '%{http_code}' -X "$method" -H "$AUTH_HEADER" "$@" "${BASE_URL}${path}" 2>/dev/null || true
 }
 
 dav_no_auth() {
@@ -137,7 +137,7 @@ dav_full() {
   local tmpfile
   tmpfile=$(mktemp)
   local status
-  status=$(curl -s -o "$tmpfile" -w '%{http_code}' -X "$method" -u "$AUTH" "$@" "${BASE_URL}${path}" 2>/dev/null || true)
+  status=$(curl -s -o "$tmpfile" -w '%{http_code}' -X "$method" -H "$AUTH_HEADER" "$@" "${BASE_URL}${path}" 2>/dev/null || true)
   echo "$status"
   cat "$tmpfile"
   rm -f "$tmpfile"
@@ -148,7 +148,7 @@ dav_headers() {
   local method="$1"
   local path="$2"
   shift 2
-  curl -s -D- -o /dev/null -X "$method" -u "$AUTH" "$@" "${BASE_URL}${path}" 2>/dev/null || true
+  curl -s -D- -o /dev/null -X "$method" -H "$AUTH_HEADER" "$@" "${BASE_URL}${path}" 2>/dev/null || true
 }
 
 strip_ctag() {
@@ -165,10 +165,10 @@ echo ""
 # --------------------------------------------------------------------------
 # Clean slate -- delete any leftover test collections
 # --------------------------------------------------------------------------
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/" >/dev/null 2>&1 || true
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest2/" >/dev/null 2>&1 || true
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/" >/dev/null 2>&1 || true
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest2/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest2/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest2/" >/dev/null 2>&1 || true
 
 # ##########################################################################
 #
@@ -294,31 +294,31 @@ echo "# --- Calendar: MKCALENDAR ---"
 # ==========================================================================
 test_name="MKCALENDAR creates calendar and returns 201"
 mkcal_body='<c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>IntTest Cal</d:displayname><c:calendar-description>Test description</c:calendar-description></d:prop></d:set></c:mkcalendar>'
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCALENDAR -u "$AUTH" -H "Content-Type: text/xml" -d "$mkcal_body" "${BASE_URL}/calendars/admin/inttest/" 2>/dev/null)
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCALENDAR -H "$AUTH_HEADER" -H "Content-Type: text/xml" -d "$mkcal_body" "${BASE_URL}/calendars/admin/inttest/" 2>/dev/null)
 assert_response "$test_name" "201" "" "$actual_status" ""
 
 # ==========================================================================
 # MKCALENDAR 405 when calendar already exists
 # ==========================================================================
 test_name="MKCALENDAR returns 405 when calendar already exists"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCALENDAR -u "$AUTH" -H "Content-Type: text/xml" -d "$mkcal_body" "${BASE_URL}/calendars/admin/inttest/" 2>/dev/null)
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCALENDAR -H "$AUTH_HEADER" -H "Content-Type: text/xml" -d "$mkcal_body" "${BASE_URL}/calendars/admin/inttest/" 2>/dev/null)
 assert_response "$test_name" "405" "" "$actual_status" ""
 
 # ==========================================================================
 # MKCALENDAR 409 when parent does not exist
 # ==========================================================================
 test_name="MKCALENDAR returns 409 when parent does not exist"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCALENDAR -u "$AUTH" -H "Content-Type: text/xml" -d "$mkcal_body" "${BASE_URL}/calendars/admin/nope/deep/" 2>/dev/null)
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCALENDAR -H "$AUTH_HEADER" -H "Content-Type: text/xml" -d "$mkcal_body" "${BASE_URL}/calendars/admin/nope/deep/" 2>/dev/null)
 assert_response "$test_name" "409" "" "$actual_status" ""
 
 # ==========================================================================
 # MKCALENDAR with empty body
 # ==========================================================================
 test_name="MKCALENDAR with empty body returns 201"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCALENDAR -u "$AUTH" "${BASE_URL}/calendars/admin/inttest2/" 2>/dev/null)
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCALENDAR -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest2/" 2>/dev/null)
 assert_response "$test_name" "201" "" "$actual_status" ""
 # cleanup
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest2/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest2/" >/dev/null 2>&1 || true
 
 # ==========================================================================
 # MKCALENDAR without auth returns 401
@@ -403,7 +403,7 @@ SUMMARY:Depth1 Event
 DTSTART:20260501T100000Z
 END:VEVENT
 END:VCALENDAR"
-curl -s -o /dev/null -X PUT -u "$AUTH" \
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "$event_body" \
   "${BASE_URL}/calendars/admin/inttest/depth1.ics" 2>/dev/null
@@ -411,7 +411,7 @@ result=$(dav_full PROPFIND /calendars/admin/inttest/ -H "Depth: 1" -H "Content-T
 actual_status=$(echo "$result" | head -1)
 actual_body=$(echo "$result" | tail -n +2)
 assert_contains "$test_name" "207" "$actual_status" "$actual_body" "depth1.ics" "/calendars/admin/inttest/"
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/depth1.ics" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/depth1.ics" >/dev/null 2>&1 || true
 
 echo "# --- Calendar: PUT ---"
 
@@ -428,7 +428,7 @@ DTSTART:20260501T100000Z
 DTEND:20260501T110000Z
 END:VEVENT
 END:VCALENDAR"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "$event_body" \
   "${BASE_URL}/calendars/admin/inttest/ev1.ics" 2>/dev/null)
@@ -446,7 +446,7 @@ SUMMARY:ETag Header
 DTSTART:20260501T100000Z
 END:VEVENT
 END:VCALENDAR"
-headers=$(curl -s -D- -o /dev/null -X PUT -u "$AUTH" \
+headers=$(curl -s -D- -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "$etag_ev" \
   "${BASE_URL}/calendars/admin/inttest/etag-hdr.ics" 2>/dev/null)
@@ -458,13 +458,13 @@ else
   ERRORS="${ERRORS}\nFAIL ${test_name}: missing ETag header"
   echo "not ok - ${test_name}"
 fi
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/etag-hdr.ics" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/etag-hdr.ics" >/dev/null 2>&1 || true
 
 # ==========================================================================
 # PUT with empty body returns 400
 # ==========================================================================
 test_name="PUT event with empty body returns 400"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "" \
   "${BASE_URL}/calendars/admin/inttest/empty.ics" 2>/dev/null)
@@ -474,7 +474,7 @@ assert_response "$test_name" "400" "" "$actual_status" ""
 # PUT with invalid body returns 400
 # ==========================================================================
 test_name="PUT with invalid calendar body returns 400"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "NOT A CALENDAR" \
   "${BASE_URL}/calendars/admin/inttest/bad.ics" 2>/dev/null)
@@ -500,7 +500,7 @@ SUMMARY:Duplicate
 DTSTART:20260601T100000Z
 END:VEVENT
 END:VCALENDAR"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "$dup_ev" \
   "${BASE_URL}/calendars/admin/inttest/ev-dup.ics" 2>/dev/null)
@@ -519,7 +519,7 @@ DTSTART:20260501T100000Z
 DTEND:20260501T120000Z
 END:VEVENT
 END:VCALENDAR"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "$update_ev" \
   "${BASE_URL}/calendars/admin/inttest/ev1.ics" 2>/dev/null)
@@ -539,7 +539,7 @@ SUMMARY:ETag Test V1
 DTSTART:20260601T100000Z
 END:VEVENT
 END:VCALENDAR"
-put_etag=$(curl -s -D- -o /dev/null -X PUT -u "$AUTH" \
+put_etag=$(curl -s -D- -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "$ev_etag_body" \
   "${BASE_URL}/calendars/admin/inttest/etag-test.ics" 2>/dev/null | grep -i '^etag:' | tr -d '\r' | awk '{print $2}')
@@ -552,7 +552,7 @@ SUMMARY:ETag Test V2
 DTSTART:20260601T100000Z
 END:VEVENT
 END:VCALENDAR"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   -H "If-Match: ${put_etag}" \
   --data-binary "$ev_etag_body2" \
@@ -560,7 +560,7 @@ actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
 assert_response "$test_name" "204" "" "$actual_status" ""
 
 test_name="PUT with wrong If-Match ETag returns 412"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   -H 'If-Match: "totally-wrong"' \
   --data-binary "$ev_etag_body2" \
@@ -568,7 +568,7 @@ actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
 assert_response "$test_name" "412" "" "$actual_status" ""
 
 test_name="PUT with If-None-Match * on existing returns 412"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   -H 'If-None-Match: *' \
   --data-binary "$ev_etag_body2" \
@@ -584,13 +584,13 @@ SUMMARY:New Only
 DTSTART:20260601T100000Z
 END:VEVENT
 END:VCALENDAR"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   -H 'If-None-Match: *' \
   --data-binary "$new_ev" \
   "${BASE_URL}/calendars/admin/inttest/if-none-new.ics" 2>/dev/null)
 assert_response "$test_name" "201" "" "$actual_status" ""
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/if-none-new.ics" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/if-none-new.ics" >/dev/null 2>&1 || true
 
 echo "# --- Calendar: GET ---"
 
@@ -686,7 +686,7 @@ UID:todo-filter-test
 SUMMARY:FilteredTask
 END:VTODO
 END:VCALENDAR"
-curl -s -o /dev/null -X PUT -u "$AUTH" \
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "$vtodo" \
   "${BASE_URL}/calendars/admin/inttest/todo.ics" 2>/dev/null
@@ -726,7 +726,7 @@ actual_body=$(echo "$result" | tail -n +2)
 assert_contains "$test_name" "207" "$actual_status" "$actual_body" "integration-test-1" "FilteredTask"
 
 # cleanup the todo
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/todo.ics" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/todo.ics" >/dev/null 2>&1 || true
 
 # ==========================================================================
 # REPORT with prop-filter text-match on SUMMARY
@@ -749,8 +749,8 @@ SUMMARY:Lunch Break
 DTSTART:20260501T120000Z
 END:VEVENT
 END:VCALENDAR"
-curl -s -o /dev/null -X PUT -u "$AUTH" -H "Content-Type: text/calendar" --data-binary "$ev_match1" "${BASE_URL}/calendars/admin/inttest/match1.ics" 2>/dev/null
-curl -s -o /dev/null -X PUT -u "$AUTH" -H "Content-Type: text/calendar" --data-binary "$ev_match2" "${BASE_URL}/calendars/admin/inttest/match2.ics" 2>/dev/null
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" -H "Content-Type: text/calendar" --data-binary "$ev_match1" "${BASE_URL}/calendars/admin/inttest/match1.ics" 2>/dev/null
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" -H "Content-Type: text/calendar" --data-binary "$ev_match2" "${BASE_URL}/calendars/admin/inttest/match2.ics" 2>/dev/null
 
 report_text='<?xml version="1.0" encoding="UTF-8"?><c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop><c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"><c:prop-filter name="SUMMARY"><c:text-match>Important</c:text-match></c:prop-filter></c:comp-filter></c:comp-filter></c:filter></c:calendar-query>'
 result=$(dav_full REPORT /calendars/admin/inttest/ -H "Content-Type: text/xml" -d "$report_text")
@@ -767,8 +767,8 @@ else
 fi
 
 # cleanup text-match events
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/match1.ics" >/dev/null 2>&1 || true
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/match2.ics" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/match1.ics" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/match2.ics" >/dev/null 2>&1 || true
 
 # ==========================================================================
 # REPORT without auth returns 401
@@ -846,7 +846,7 @@ else
 fi
 
 # Restore displayname for subsequent tests
-curl -s -o /dev/null -X PROPPATCH -u "$AUTH" -H "Content-Type: text/xml" \
+curl -s -o /dev/null -X PROPPATCH -H "$AUTH_HEADER" -H "Content-Type: text/xml" \
   -d '<d:propertyupdate xmlns:d="DAV:"><d:set><d:prop><d:displayname>IntTest Cal</d:displayname></d:prop></d:set></d:propertyupdate>' \
   "${BASE_URL}/calendars/admin/inttest/" 2>/dev/null
 
@@ -879,11 +879,11 @@ SUMMARY:Move Me
 DTSTART:20260601T100000Z
 END:VEVENT
 END:VCALENDAR"
-curl -s -o /dev/null -X PUT -u "$AUTH" \
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "$move_ev" \
   "${BASE_URL}/calendars/admin/inttest/move-src.ics" 2>/dev/null
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   -H "Destination: ${BASE_URL}/calendars/admin/inttest/move-dst.ics" \
   "${BASE_URL}/calendars/admin/inttest/move-src.ics" 2>/dev/null)
 assert_response "$test_name" "201" "" "$actual_status" ""
@@ -909,11 +909,11 @@ SUMMARY:Conflict Source
 DTSTART:20260601T100000Z
 END:VEVENT
 END:VCALENDAR"
-curl -s -o /dev/null -X PUT -u "$AUTH" \
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/calendar" \
   --data-binary "$move_ev2" \
   "${BASE_URL}/calendars/admin/inttest/move-conflict.ics" 2>/dev/null
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   -H "Destination: ${BASE_URL}/calendars/admin/inttest/move-dst.ics" \
   -H "Overwrite: F" \
   "${BASE_URL}/calendars/admin/inttest/move-conflict.ics" 2>/dev/null)
@@ -923,7 +923,7 @@ assert_response "$test_name" "412" "" "$actual_status" ""
 # MOVE with default Overwrite (T) and existing destination returns 204
 # ==========================================================================
 test_name="MOVE overwrite existing destination returns 204"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   -H "Destination: ${BASE_URL}/calendars/admin/inttest/move-dst.ics" \
   "${BASE_URL}/calendars/admin/inttest/move-conflict.ics" 2>/dev/null)
 assert_response "$test_name" "204" "" "$actual_status" ""
@@ -932,7 +932,7 @@ assert_response "$test_name" "204" "" "$actual_status" ""
 # MOVE missing source returns 404
 # ==========================================================================
 test_name="MOVE missing source returns 404"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   -H "Destination: ${BASE_URL}/calendars/admin/inttest/nope.ics" \
   "${BASE_URL}/calendars/admin/inttest/nonexistent.ics" 2>/dev/null)
 assert_response "$test_name" "404" "" "$actual_status" ""
@@ -941,12 +941,12 @@ assert_response "$test_name" "404" "" "$actual_status" ""
 # MOVE without Destination header returns 400
 # ==========================================================================
 test_name="MOVE without Destination header returns 400"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   "${BASE_URL}/calendars/admin/inttest/move-dst.ics" 2>/dev/null)
 assert_response "$test_name" "400" "" "$actual_status" ""
 
 # cleanup move items
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/move-dst.ics" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/move-dst.ics" >/dev/null 2>&1 || true
 
 echo "# --- Calendar: DELETE ---"
 
@@ -975,7 +975,7 @@ assert_response "$test_name" "404" "" "$actual_status" ""
 # DELETE calendar collection returns 204
 # ==========================================================================
 # First clean up remaining items
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/etag-test.ics" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/etag-test.ics" >/dev/null 2>&1 || true
 
 test_name="DELETE calendar collection returns 204"
 actual_status=$(dav DELETE /calendars/admin/inttest/)
@@ -999,30 +999,30 @@ echo "# --- Contacts: MKCOL ---"
 # ==========================================================================
 test_name="MKCOL creates addressbook and returns 201"
 mkcol_body='<d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:set><d:prop><d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype><d:displayname>IntTest Addr</d:displayname></d:prop></d:set></d:mkcol>'
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCOL -u "$AUTH" -H "Content-Type: text/xml" -d "$mkcol_body" "${BASE_URL}/addressbooks/admin/inttest/" 2>/dev/null)
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCOL -H "$AUTH_HEADER" -H "Content-Type: text/xml" -d "$mkcol_body" "${BASE_URL}/addressbooks/admin/inttest/" 2>/dev/null)
 assert_response "$test_name" "201" "" "$actual_status" ""
 
 # ==========================================================================
 # MKCOL 405 when already exists
 # ==========================================================================
 test_name="MKCOL returns 405 when addressbook already exists"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCOL -u "$AUTH" -H "Content-Type: text/xml" -d "$mkcol_body" "${BASE_URL}/addressbooks/admin/inttest/" 2>/dev/null)
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCOL -H "$AUTH_HEADER" -H "Content-Type: text/xml" -d "$mkcol_body" "${BASE_URL}/addressbooks/admin/inttest/" 2>/dev/null)
 assert_response "$test_name" "405" "" "$actual_status" ""
 
 # ==========================================================================
 # MKCOL 409 when parent does not exist
 # ==========================================================================
 test_name="MKCOL returns 409 when parent does not exist"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCOL -u "$AUTH" -H "Content-Type: text/xml" -d "$mkcol_body" "${BASE_URL}/addressbooks/admin/nope/deep/" 2>/dev/null)
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCOL -H "$AUTH_HEADER" -H "Content-Type: text/xml" -d "$mkcol_body" "${BASE_URL}/addressbooks/admin/nope/deep/" 2>/dev/null)
 assert_response "$test_name" "409" "" "$actual_status" ""
 
 # ==========================================================================
 # MKCOL with empty body
 # ==========================================================================
 test_name="MKCOL with empty body returns 201"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCOL -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest2/" 2>/dev/null)
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCOL -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest2/" 2>/dev/null)
 assert_response "$test_name" "201" "" "$actual_status" ""
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest2/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest2/" >/dev/null 2>&1 || true
 
 # ==========================================================================
 # MKCOL without auth returns 401
@@ -1102,7 +1102,7 @@ VERSION:3.0
 UID:depth1-contact
 FN:Depth Contact
 END:VCARD"
-curl -s -o /dev/null -X PUT -u "$AUTH" \
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "$vcard_depth" \
   "${BASE_URL}/addressbooks/admin/inttest/depth1.vcf" 2>/dev/null
@@ -1110,7 +1110,7 @@ result=$(dav_full PROPFIND /addressbooks/admin/inttest/ -H "Depth: 1" -H "Conten
 actual_status=$(echo "$result" | head -1)
 actual_body=$(echo "$result" | tail -n +2)
 assert_contains "$test_name" "207" "$actual_status" "$actual_body" "depth1.vcf" "/addressbooks/admin/inttest/"
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/depth1.vcf" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest/depth1.vcf" >/dev/null 2>&1 || true
 
 echo "# --- Contacts: PUT ---"
 
@@ -1123,7 +1123,7 @@ VERSION:3.0
 UID:int-contact-1
 FN:Alice Test
 END:VCARD"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "$vcard" \
   "${BASE_URL}/addressbooks/admin/inttest/alice.vcf" 2>/dev/null)
@@ -1138,7 +1138,7 @@ VERSION:3.0
 UID:etag-contact-hdr
 FN:ETag Header Contact
 END:VCARD"
-headers=$(curl -s -D- -o /dev/null -X PUT -u "$AUTH" \
+headers=$(curl -s -D- -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "$vcard_etag" \
   "${BASE_URL}/addressbooks/admin/inttest/etag-hdr.vcf" 2>/dev/null)
@@ -1150,13 +1150,13 @@ else
   ERRORS="${ERRORS}\nFAIL ${test_name}: missing ETag header"
   echo "not ok - ${test_name}"
 fi
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/etag-hdr.vcf" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest/etag-hdr.vcf" >/dev/null 2>&1 || true
 
 # ==========================================================================
 # PUT with empty body returns 400
 # ==========================================================================
 test_name="PUT contact with empty body returns 400"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "" \
   "${BASE_URL}/addressbooks/admin/inttest/empty.vcf" 2>/dev/null)
@@ -1166,7 +1166,7 @@ assert_response "$test_name" "400" "" "$actual_status" ""
 # PUT with invalid vcard body returns 400
 # ==========================================================================
 test_name="PUT with invalid vcard body returns 400"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "NOT A VCARD" \
   "${BASE_URL}/addressbooks/admin/inttest/bad.vcf" 2>/dev/null)
@@ -1189,7 +1189,7 @@ VERSION:3.0
 UID:int-contact-1
 FN:Duplicate Alice
 END:VCARD"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "$dup_vcard" \
   "${BASE_URL}/addressbooks/admin/inttest/alice-dup.vcf" 2>/dev/null)
@@ -1204,7 +1204,7 @@ VERSION:3.0
 UID:int-contact-1
 FN:Alice Updated
 END:VCARD"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "$update_vcard" \
   "${BASE_URL}/addressbooks/admin/inttest/alice.vcf" 2>/dev/null)
@@ -1221,7 +1221,7 @@ VERSION:3.0
 UID:etag-contact-rt
 FN:ETag V1
 END:VCARD"
-put_etag=$(curl -s -D- -o /dev/null -X PUT -u "$AUTH" \
+put_etag=$(curl -s -D- -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "$vcard_etag1" \
   "${BASE_URL}/addressbooks/admin/inttest/etag-rt.vcf" 2>/dev/null | grep -i '^etag:' | tr -d '\r' | awk '{print $2}')
@@ -1231,7 +1231,7 @@ VERSION:3.0
 UID:etag-contact-rt
 FN:ETag V2
 END:VCARD"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   -H "If-Match: ${put_etag}" \
   --data-binary "$vcard_etag2" \
@@ -1239,7 +1239,7 @@ actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
 assert_response "$test_name" "204" "" "$actual_status" ""
 
 test_name="PUT contact with wrong If-Match returns 412"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   -H 'If-Match: "wrong-etag"' \
   --data-binary "$vcard_etag2" \
@@ -1247,7 +1247,7 @@ actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
 assert_response "$test_name" "412" "" "$actual_status" ""
 
 test_name="PUT contact with If-None-Match * on existing returns 412"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   -H 'If-None-Match: *' \
   --data-binary "$vcard_etag2" \
@@ -1260,14 +1260,14 @@ VERSION:3.0
 UID:etag-contact-new
 FN:Brand New
 END:VCARD"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   -H 'If-None-Match: *' \
   --data-binary "$vcard_new" \
   "${BASE_URL}/addressbooks/admin/inttest/etag-new.vcf" 2>/dev/null)
 assert_response "$test_name" "201" "" "$actual_status" ""
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/etag-new.vcf" >/dev/null 2>&1 || true
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/etag-rt.vcf" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest/etag-new.vcf" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest/etag-rt.vcf" >/dev/null 2>&1 || true
 
 echo "# --- Contacts: GET ---"
 
@@ -1363,7 +1363,7 @@ VERSION:3.0
 UID:int-contact-bob
 FN:Bob Builder
 END:VCARD"
-curl -s -o /dev/null -X PUT -u "$AUTH" \
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "$vcard_bob" \
   "${BASE_URL}/addressbooks/admin/inttest/bob.vcf" 2>/dev/null
@@ -1450,7 +1450,7 @@ else
 fi
 
 # Restore displayname
-curl -s -o /dev/null -X PROPPATCH -u "$AUTH" -H "Content-Type: text/xml" \
+curl -s -o /dev/null -X PROPPATCH -H "$AUTH_HEADER" -H "Content-Type: text/xml" \
   -d '<d:propertyupdate xmlns:d="DAV:"><d:set><d:prop><d:displayname>IntTest Addr</d:displayname></d:prop></d:set></d:propertyupdate>' \
   "${BASE_URL}/addressbooks/admin/inttest/" 2>/dev/null
 
@@ -1472,11 +1472,11 @@ VERSION:3.0
 UID:move-contact-test
 FN:Moveable
 END:VCARD"
-curl -s -o /dev/null -X PUT -u "$AUTH" \
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "$move_vcard" \
   "${BASE_URL}/addressbooks/admin/inttest/move-src.vcf" 2>/dev/null
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   -H "Destination: ${BASE_URL}/addressbooks/admin/inttest/move-dst.vcf" \
   "${BASE_URL}/addressbooks/admin/inttest/move-src.vcf" 2>/dev/null)
 assert_response "$test_name" "201" "" "$actual_status" ""
@@ -1498,11 +1498,11 @@ VERSION:3.0
 UID:move-contact-conflict
 FN:Conflict Source
 END:VCARD"
-curl -s -o /dev/null -X PUT -u "$AUTH" \
+curl -s -o /dev/null -X PUT -H "$AUTH_HEADER" \
   -H "Content-Type: text/vcard" \
   --data-binary "$move_vcard2" \
   "${BASE_URL}/addressbooks/admin/inttest/move-conflict.vcf" 2>/dev/null
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   -H "Destination: ${BASE_URL}/addressbooks/admin/inttest/move-dst.vcf" \
   -H "Overwrite: F" \
   "${BASE_URL}/addressbooks/admin/inttest/move-conflict.vcf" 2>/dev/null)
@@ -1512,7 +1512,7 @@ assert_response "$test_name" "412" "" "$actual_status" ""
 # MOVE contact with default Overwrite returns 204
 # ==========================================================================
 test_name="MOVE contact overwrite existing returns 204"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   -H "Destination: ${BASE_URL}/addressbooks/admin/inttest/move-dst.vcf" \
   "${BASE_URL}/addressbooks/admin/inttest/move-conflict.vcf" 2>/dev/null)
 assert_response "$test_name" "204" "" "$actual_status" ""
@@ -1521,7 +1521,7 @@ assert_response "$test_name" "204" "" "$actual_status" ""
 # MOVE contact missing source returns 404
 # ==========================================================================
 test_name="MOVE contact missing source returns 404"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   -H "Destination: ${BASE_URL}/addressbooks/admin/inttest/nope.vcf" \
   "${BASE_URL}/addressbooks/admin/inttest/nonexistent.vcf" 2>/dev/null)
 assert_response "$test_name" "404" "" "$actual_status" ""
@@ -1530,12 +1530,12 @@ assert_response "$test_name" "404" "" "$actual_status" ""
 # MOVE contact without Destination header returns 400
 # ==========================================================================
 test_name="MOVE contact without Destination header returns 400"
-actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -H "$AUTH_HEADER" \
   "${BASE_URL}/addressbooks/admin/inttest/move-dst.vcf" 2>/dev/null)
 assert_response "$test_name" "400" "" "$actual_status" ""
 
 # cleanup move items
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/move-dst.vcf" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest/move-dst.vcf" >/dev/null 2>&1 || true
 
 echo "# --- Contacts: DELETE ---"
 
@@ -1564,7 +1564,7 @@ assert_response "$test_name" "404" "" "$actual_status" ""
 # DELETE addressbook collection returns 204
 # ==========================================================================
 # cleanup remaining items
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/bob.vcf" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest/bob.vcf" >/dev/null 2>&1 || true
 
 test_name="DELETE addressbook collection returns 204"
 actual_status=$(dav DELETE /addressbooks/admin/inttest/)
@@ -1588,7 +1588,7 @@ echo "# --- Discovery flows ---"
 # ==========================================================================
 test_name="Full discovery: root -> calendar-home-set -> list calendars"
 # Create a temporary calendar for this test
-curl -s -o /dev/null -X MKCALENDAR -u "$AUTH" -H "Content-Type: text/xml" \
+curl -s -o /dev/null -X MKCALENDAR -H "$AUTH_HEADER" -H "Content-Type: text/xml" \
   -d '<c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>Discovery Cal</d:displayname></d:prop></d:set></c:mkcalendar>' \
   "${BASE_URL}/calendars/admin/inttest/" 2>/dev/null
 
@@ -1618,13 +1618,13 @@ else
   echo "not ok - ${test_name}"
 fi
 
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/" >/dev/null 2>&1 || true
 
 # ==========================================================================
 # Full discovery: PROPFIND / -> addressbook-home-set -> list addressbooks
 # ==========================================================================
 test_name="Full discovery: root -> addressbook-home-set -> list addressbooks"
-curl -s -o /dev/null -X MKCOL -u "$AUTH" -H "Content-Type: text/xml" \
+curl -s -o /dev/null -X MKCOL -H "$AUTH_HEADER" -H "Content-Type: text/xml" \
   -d '<d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:set><d:prop><d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype><d:displayname>Discovery Addr</d:displayname></d:prop></d:set></d:mkcol>' \
   "${BASE_URL}/addressbooks/admin/inttest/" 2>/dev/null
 
@@ -1652,15 +1652,15 @@ else
   echo "not ok - ${test_name}"
 fi
 
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest/" >/dev/null 2>&1 || true
 
 # ==========================================================================
 # Cleanup
 # ==========================================================================
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/" >/dev/null 2>&1 || true
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest2/" >/dev/null 2>&1 || true
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/" >/dev/null 2>&1 || true
-curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest2/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/calendars/admin/inttest2/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest/" >/dev/null 2>&1 || true
+curl -s -X DELETE -H "$AUTH_HEADER" "${BASE_URL}/addressbooks/admin/inttest2/" >/dev/null 2>&1 || true
 
 # ==========================================================================
 # Summary

@@ -25,6 +25,7 @@ end
   caldav/storage
   caldav/storage/mock
   caldav/storage/filesystem
+  caldav/forward_auth
   caldav/test_middleware
   caldav/dav_collection
   caldav/dav_item

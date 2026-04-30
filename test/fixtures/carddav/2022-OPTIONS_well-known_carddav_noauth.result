@@ -1,7 +1,0 @@
-HTTP/1.1 301 Moved Permanently
-Date: Dow, 01 Jan 2000 00:00:00 GMT
-Location: http://mycaldav/caldav.php/
-Content-Length: 0
-Content-Type: text/plain; charset="utf-8"
-
-

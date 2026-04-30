@@ -1,9 +1,0 @@
-HTTP/1.1 204 No Content
-Date: Dow, 01 Jan 2000 00:00:00 GMT
-DAV: 1, 2, 3, access-control, calendar-access, calendar-schedule
-DAV: extended-mkcol, bind, addressbook, calendar-auto-schedule, calendar-proxy
-
-
-SQL Query 1 Result:
-         dav_name: >/manager1/home/E1A13F04-iCal-schedule.ics<
-

@@ -29,10 +29,11 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'rack', '~> 3.0'
+  spec.add_dependency "scampi", "~> 0.1.7"
+  spec.add_dependency "activesupport", "~> 8.1"
 
-  spec.add_development_dependency 'base64'
-  spec.add_development_dependency 'minitest', '~> 5.0'
   spec.add_development_dependency 'rack-test', '~> 2.0'
-  spec.add_development_dependency 'rake', '~> 13.0'
-  spec.add_development_dependency 'rubocop', '~> 1.21'
+  spec.add_development_dependency 'base64'
+  spec.add_development_dependency 'falcon'
+
 end

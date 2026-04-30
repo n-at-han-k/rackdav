@@ -7,9 +7,8 @@ RUN apt-get update -qq && \
 WORKDIR /app
 
 # Copy the gem source first for layer caching
-COPY caldav.gemspec Gemfile Rakefile LICENSE ./
+COPY caldav.gemspec Gemfile LICENSE ./
 COPY lib/ lib/
-COPY exe/ exe/
 
 # Copy the example Gemfile and install deps
 COPY example/Gemfile example/Gemfile

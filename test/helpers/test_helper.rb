@@ -16,7 +16,13 @@ module Caldav
     include Rack::Test::Methods
 
     def app
-      Caldav::App.new
+      self.class.shared_app
+    end
+
+    # Share a single App instance per test class so order-dependent
+    # tests accumulate state (collections, items, tickets, bindings).
+    def self.shared_app
+      @shared_app ||= Caldav::App.new
     end
 
     private

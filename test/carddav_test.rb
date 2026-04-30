@@ -44,10 +44,13 @@ class TestCarddav < Caldav::IntegrationTest
     expected = parse_result_file(name)
     return if expected.nil?
 
-    # Set auth
+    # Set auth: use explicit AUTH= if given, otherwise infer from URL path
     if req[:auth]
       user, pass = req[:auth].split(':', 2)
       with_auth(user, pass)
+    elsif req[:path] =~ %r{/caldav\.php/([^/]+)/}
+      user = Regexp.last_match(1)
+      with_auth(user, user)
     end
 
     # Issue the request
@@ -55,7 +58,9 @@ class TestCarddav < Caldav::IntegrationTest
     req[:headers].each { |k, v| opts[k] = v }
     opts['CONTENT_TYPE'] = req[:content_type] if req[:content_type]
 
-    request(req[:path], method: req[:method], input: req[:body], **opts)
+    # Percent-encode non-ASCII characters in path for URI safety
+    safe_path = req[:path].gsub(/[^\x00-\x7F]/) { |c| c.bytes.map { |b| '%%%02X' % b }.join }
+    request(safe_path, method: req[:method], input: req[:body], **opts)
     resp = last_response
 
     # Assert status code
@@ -64,6 +69,9 @@ class TestCarddav < Caldav::IntegrationTest
 
     # Normalize actual response body with REPLACE patterns from the .test file
     actual_body = resp.body.to_s
+    # Strip encoding comments that Ruby adds to binary strings
+    actual_body = actual_body.gsub(/^# encoding: .*$\n?/, '')
+    actual_body = actual_body.gsub(/^#    valid: .*$\n?/, '')
     req[:replaces].each do |pattern, replacement|
       actual_body = actual_body.gsub(pattern, replacement)
     end
@@ -176,8 +184,8 @@ class TestCarddav < Caldav::IntegrationTest
       end
     end
 
-    result[:body] = body_lines.join("\n")
-    result[:body] += "\n" unless body_lines.empty?
+    result[:body] = body_lines.join("\r\n")
+    result[:body] += "\r\n" unless body_lines.empty?
     result
   end
 
@@ -194,6 +202,9 @@ class TestCarddav < Caldav::IntegrationTest
     status = nil
     body = ''
 
+    # Strip leading SQL execution results (DOSQL output before HTTP status line)
+    content = content.sub(%r{\A.*?(?=^HTTP/)}m, '') if content =~ %r{^HTTP/}m && !content.start_with?('HTTP/')
+
     if content.start_with?('HTTP/')
       first_line, rest = content.split("\n", 2)
       status = first_line[%r{HTTP/\d+\.\d+\s+(\d+)}, 1].to_i
@@ -206,7 +217,7 @@ class TestCarddav < Caldav::IntegrationTest
     end
 
     # Strip SQL Query result blocks from expected body
-    body = body.gsub(/\nSQL Query \d+ Result:.*\z/m, '')
+    body = body.gsub(/\n?SQL Query \d+ Result:.*\z/m, '')
 
     { status: status, body: body }
   end

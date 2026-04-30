@@ -22,7 +22,7 @@ module Caldav
           if !collection
             [404, { 'content-type' => 'text/xml; charset=utf-8' }, ['Not Found']]
           else
-            body = request.body.read
+            body = request.body&.read || ''
             updates = {}
             dn = Xml.extract_value(body, 'displayname')
             updates[:displayname] = dn if dn

@@ -19,7 +19,7 @@ module Caldav
         elsif !env['dav.user'].present?
           [401, { 'content-type' => 'text/plain', 'www-authenticate' => 'Basic realm="caldav"' }, ['Unauthorized']]
         else
-          body = request.body.read
+          body = request.body&.read
 
           if body.nil? || body.strip.empty?
             [400, { 'content-type' => 'text/plain' }, ['Empty body']]

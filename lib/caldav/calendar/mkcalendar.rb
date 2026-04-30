@@ -26,7 +26,7 @@ module Caldav
           elsif !path.parent_exists?
             [409, { 'content-type' => 'text/plain' }, ['Parent does not exist']]
           else
-            body = request.body.read
+            body = request.body&.read || ''
             displayname = Xml.extract_value(body, 'displayname')
             description = Xml.extract_value(body, 'calendar-description')
             color = Xml.extract_value(body, 'calendar-color')

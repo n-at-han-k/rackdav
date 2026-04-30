@@ -19,7 +19,7 @@ module Caldav
         elsif !env['dav.user'].present?
           [401, { 'content-type' => 'text/plain', 'www-authenticate' => 'Basic realm="caldav"' }, ['Unauthorized']]
         else
-          body = request.body.read
+          body = request.body&.read
           items = DavItem.list(path)
 
           # Apply comp-filter if present in the request body

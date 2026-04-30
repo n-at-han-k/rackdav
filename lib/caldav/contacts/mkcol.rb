@@ -26,7 +26,7 @@ module Caldav
           elsif !path.parent_exists?
             [409, { 'content-type' => 'text/plain' }, ['Parent does not exist']]
           else
-            body = request.body.read
+            body = request.body&.read || ''
             displayname = Xml.extract_value(body, 'displayname')
             col_type = body.include?('addressbook') ? :addressbook : :collection
 

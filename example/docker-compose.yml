@@ -6,10 +6,7 @@ services:
     ports:
       - "9292:9292"
     volumes:
-      - ..:/app
       - caldav-data:/data
-    working_dir: /app/example
-    command: bundle exec falcon serve --bind http://0.0.0.0:9292
 
 volumes:
   caldav-data:

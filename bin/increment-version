@@ -40,5 +40,7 @@ result = template.result(binding)
 
 File.write(output_path, result)
 
+`bundle install`
+
 puts "#{current} -> #{version}"
 

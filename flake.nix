@@ -12,6 +12,17 @@
         ruby = pkgs.ruby_3_4; # Specify version
       in
       {
+        packages.runtime = pkgs.buildEnv {
+          name = "caldav-runtime";
+          paths = [
+            ruby
+            pkgs.libyaml
+            pkgs.openssl
+            pkgs.cacert
+            pkgs.coreutils
+          ];
+        };
+
         devShells.default = pkgs.mkShell {
           nativeBuildInputs = [
             pkgs.pkg-config # native extension discovery
@@ -21,6 +32,9 @@
             ruby
             pkgs.libyaml # psych gem
             pkgs.openssl # openssl gem
+            pkgs.coreutils
+            pkgs.cacert
+            pkgs.nix-ld
           ];
 
           shellHook = ''

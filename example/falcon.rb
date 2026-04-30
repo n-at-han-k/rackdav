@@ -23,6 +23,12 @@ service "caldav" do
     "http://0.0.0.0:9292"
   end
 
+  # Place the IPC socket in a writable directory so the app directory
+  # can stay read-only.
+  def ipc_path
+    "/run/falcon/caldav.ipc"
+  end
+
   # Number of worker processes. Defaults to Async::Container.processor_count.
   # Uncomment to override:
   # def count

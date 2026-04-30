@@ -20,7 +20,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-docker compose -f "$COMPOSE_DIR/docker-compose.yml" up -d --build 2>&1
+docker compose -f "$COMPOSE_DIR/docker-compose.yml" up -d ${1:-} 2>&1
 
 # Wait for server to be ready (OPTIONS / doesn't require auth)
 echo "Waiting for server..."

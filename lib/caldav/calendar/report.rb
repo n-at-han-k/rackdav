@@ -31,51 +31,19 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
-  it "returns 207 with item data for calendar report" do
-    mw = TM.new(Caldav::Calendar::Report)
-    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
-    mw.storage.put_item('/calendars/admin/cal/event.ics', 'BEGIN:VCALENDAR', 'text/calendar')
-    env = TM.env('REPORT', '/calendars/admin/cal/')
-    status, headers, body = mw.call(env)
-    status.should == 207
-    headers['content-type'].should.include 'xml'
-    body.first.should.include 'VCALENDAR'
+  def self.etag(body)
+    %("#{Digest::SHA256.hexdigest(body)[0..15]}")
   end
 
-  it "returns well-formed multistatus XML with d:response elements" do
-    mw = TM.new(Caldav::Calendar::Report)
-    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
-    mw.storage.put_item('/calendars/admin/cal/ev1.ics', 'BEGIN:VCALENDAR\nEVENT1\nEND:VCALENDAR', 'text/calendar')
-    mw.storage.put_item('/calendars/admin/cal/ev2.ics', 'BEGIN:VCALENDAR\nEVENT2\nEND:VCALENDAR', 'text/calendar')
-    env = TM.env('REPORT', '/calendars/admin/cal/')
-    status, _, body = mw.call(env)
-    status.should == 207
-    xml = body.first
-    xml.should.include 'd:multistatus'
-    xml.should.include 'd:response'
-    xml.should.include 'd:href'
-    xml.should.include 'c:calendar-data'
-    xml.should.include 'EVENT1'
-    xml.should.include 'EVENT2'
-  end
-
-  it "returns empty multistatus for collection with no items" do
-    mw = TM.new(Caldav::Calendar::Report)
-    mw.storage.create_collection('/calendars/admin/empty/', type: :calendar)
-    env = TM.env('REPORT', '/calendars/admin/empty/')
-    status, _, body = mw.call(env)
-    status.should == 207
-    xml = body.first
-    xml.should.include 'd:multistatus'
-    xml.should.not.include 'd:response'
+  def self.normalize(xml)
+    xml.gsub(/>\s+</, '><').strip
   end
 
   it "passes through for non-calendar path" do
     mw = TM.new(Caldav::Calendar::Report)
-    env = TM.env('REPORT', '/addressbooks/admin/a/')
-    status, = mw.call(env)
+    status, = mw.call(TM.env('REPORT', '/addressbooks/admin/a/'))
     status.should == 999
   end
 
@@ -83,5 +51,90 @@ test do
     mw = TM.new(Caldav::Calendar::Report, nil, user: nil)
     status, = mw.call(TM.env('REPORT', '/calendars/admin/cal/'))
     status.should == 401
+  end
+
+  it "returns full 207 report for a single item" do
+    mw = TM.new(Caldav::Calendar::Report)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    ev = 'BEGIN:VCALENDAR'
+    mw.storage.put_item('/calendars/admin/cal/ev.ics', ev, 'text/calendar')
+    status, headers, body = mw.call(TM.env('REPORT', '/calendars/admin/cal/'))
+    status.should == 207
+    headers['content-type'].should == 'text/xml; charset=utf-8'
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/cal/ev.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(ev))}</d:getetag>
+              <c:calendar-data>#{Caldav::Xml.escape(ev)}</c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns full 207 report for multiple items" do
+    mw = TM.new(Caldav::Calendar::Report)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    ev_a = 'EVENT-A'
+    ev_b = 'EVENT-B'
+    ev_c = 'EVENT-C'
+    mw.storage.put_item('/calendars/admin/cal/a.ics', ev_a, 'text/calendar')
+    mw.storage.put_item('/calendars/admin/cal/b.ics', ev_b, 'text/calendar')
+    mw.storage.put_item('/calendars/admin/cal/c.ics', ev_c, 'text/calendar')
+    status, _, body = mw.call(TM.env('REPORT', '/calendars/admin/cal/'))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/cal/a.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(ev_a))}</d:getetag>
+              <c:calendar-data>#{Caldav::Xml.escape(ev_a)}</c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+        <d:response>
+          <d:href>/calendars/admin/cal/b.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(ev_b))}</d:getetag>
+              <c:calendar-data>#{Caldav::Xml.escape(ev_b)}</c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+        <d:response>
+          <d:href>/calendars/admin/cal/c.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(ev_c))}</d:getetag>
+              <c:calendar-data>#{Caldav::Xml.escape(ev_c)}</c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns empty multistatus for collection with no items" do
+    mw = TM.new(Caldav::Calendar::Report)
+    mw.storage.create_collection('/calendars/admin/empty/', type: :calendar)
+    status, _, body = mw.call(TM.env('REPORT', '/calendars/admin/empty/'))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+      </d:multistatus>
+    XML
   end
 end

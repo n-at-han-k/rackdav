@@ -1,8 +1,6 @@
-FROM ruby:3.4-slim
+FROM ruby:3.4
 
-RUN apt-get update -qq && \
-    apt-get install -y --no-install-recommends build-essential git && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update -qq && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -11,6 +9,7 @@ COPY caldav.gemspec Gemfile LICENSE ./
 COPY lib/ lib/
 
 # Copy the example Gemfile and install deps
+
 COPY example/Gemfile example/Gemfile
 RUN cd example && bundle install --jobs 4
 

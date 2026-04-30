@@ -40,7 +40,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "returns item body and content-type" do
     mw = TM.new(Caldav::Calendar::Get)

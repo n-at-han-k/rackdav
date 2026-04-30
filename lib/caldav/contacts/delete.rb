@@ -37,7 +37,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "deletes a contact and returns 204" do
     mw = TM.new(Caldav::Contacts::Delete)

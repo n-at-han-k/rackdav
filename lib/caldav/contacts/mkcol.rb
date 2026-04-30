@@ -41,11 +41,18 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "creates an addressbook and returns 201" do
     mw = TM.new(Caldav::Contacts::Mkcol)
-    body = '<d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:set><d:prop><d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype><d:displayname>Contacts</d:displayname></d:prop></d:set></d:mkcol>'
+    body = <<~XML
+      <d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:set><d:prop>
+          <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
+          <d:displayname>Contacts</d:displayname>
+        </d:prop></d:set>
+      </d:mkcol>
+    XML
     env = TM.env('MKCOL', '/addressbooks/admin/contacts/', body: body)
     status, = mw.call(env)
     status.should == 201
@@ -54,7 +61,14 @@ test do
 
   it "stores displayname and detects addressbook type from XML body" do
     mw = TM.new(Caldav::Contacts::Mkcol)
-    body = '<d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:set><d:prop><d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype><d:displayname>My Contacts</d:displayname></d:prop></d:set></d:mkcol>'
+    body = <<~XML
+      <d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:set><d:prop>
+          <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
+          <d:displayname>My Contacts</d:displayname>
+        </d:prop></d:set>
+      </d:mkcol>
+    XML
     env = TM.env('MKCOL', '/addressbooks/admin/mycon/', body: body)
     status, = mw.call(env)
     status.should == 201
@@ -89,5 +103,44 @@ test do
     mw = TM.new(Caldav::Contacts::Mkcol, nil, user: nil)
     status, = mw.call(TM.env('MKCOL', '/addressbooks/admin/newaddr/'))
     status.should == 401
+  end
+
+  it "sets type to addressbook when body contains addressbook" do
+    mw = TM.new(Caldav::Contacts::Mkcol)
+    body = <<~XML
+      <d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:set><d:prop>
+          <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
+        </d:prop></d:set>
+      </d:mkcol>
+    XML
+    env = TM.env('MKCOL', '/addressbooks/admin/typed/', body: body)
+    status, = mw.call(env)
+    status.should == 201
+    mw.storage.get_collection('/addressbooks/admin/typed/')[:type].should == :addressbook
+  end
+
+  it "creates collection without body" do
+    mw = TM.new(Caldav::Contacts::Mkcol)
+    env = TM.env('MKCOL', '/addressbooks/admin/plain/')
+    status, = mw.call(env)
+    status.should == 201
+    mw.storage.collection_exists?('/addressbooks/admin/plain/').should.be.true
+  end
+
+  it "adds trailing slash to path" do
+    mw = TM.new(Caldav::Contacts::Mkcol)
+    body = <<~XML
+      <d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:set><d:prop>
+          <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
+          <d:displayname>Slash</d:displayname>
+        </d:prop></d:set>
+      </d:mkcol>
+    XML
+    env = TM.env('MKCOL', '/addressbooks/admin/noslash', body: body)
+    status, = mw.call(env)
+    status.should == 201
+    mw.storage.collection_exists?('/addressbooks/admin/noslash/').should.be.true
   end
 end

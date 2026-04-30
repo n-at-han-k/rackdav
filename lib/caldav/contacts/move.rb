@@ -50,7 +50,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "moves a contact and returns 201" do
     mw = TM.new(Caldav::Contacts::Move)

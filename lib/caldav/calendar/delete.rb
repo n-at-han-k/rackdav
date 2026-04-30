@@ -37,7 +37,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "deletes an item and returns 204" do
     mw = TM.new(Caldav::Calendar::Delete)

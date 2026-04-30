@@ -47,11 +47,17 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "creates a calendar collection and returns 201" do
     mw = TM.new(Caldav::Calendar::Mkcalendar)
-    body = '<c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>New</d:displayname></d:prop></d:set></c:mkcalendar>'
+    body = <<~XML
+      <c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:set><d:prop>
+          <d:displayname>New</d:displayname>
+        </d:prop></d:set>
+      </c:mkcalendar>
+    XML
     env = TM.env('MKCALENDAR', '/calendars/admin/newcal/', body: body)
     status, = mw.call(env)
     status.should == 201
@@ -60,7 +66,15 @@ test do
 
   it "stores displayname, description, and color from XML body" do
     mw = TM.new(Caldav::Calendar::Mkcalendar)
-    body = '<c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:x="http://apple.com/ns/ical/"><d:set><d:prop><d:displayname>Work</d:displayname><c:calendar-description>Work events</c:calendar-description><x:calendar-color>#0000ff</x:calendar-color></d:prop></d:set></c:mkcalendar>'
+    body = <<~XML
+      <c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:x="http://apple.com/ns/ical/">
+        <d:set><d:prop>
+          <d:displayname>Work</d:displayname>
+          <c:calendar-description>Work events</c:calendar-description>
+          <x:calendar-color>#0000ff</x:calendar-color>
+        </d:prop></d:set>
+      </c:mkcalendar>
+    XML
     env = TM.env('MKCALENDAR', '/calendars/admin/work/', body: body)
     status, = mw.call(env)
     status.should == 201
@@ -97,5 +111,47 @@ test do
     mw = TM.new(Caldav::Calendar::Mkcalendar, nil, user: nil)
     status, = mw.call(TM.env('MKCALENDAR', '/calendars/admin/newcal/'))
     status.should == 401
+  end
+
+  it "creates calendar with only displayname (no description or color)" do
+    mw = TM.new(Caldav::Calendar::Mkcalendar)
+    body = <<~XML
+      <c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:set><d:prop>
+          <d:displayname>Simple</d:displayname>
+        </d:prop></d:set>
+      </c:mkcalendar>
+    XML
+    env = TM.env('MKCALENDAR', '/calendars/admin/simple/', body: body)
+    status, = mw.call(env)
+    status.should == 201
+    col = mw.storage.get_collection('/calendars/admin/simple/')
+    col[:displayname].should == 'Simple'
+    col[:description].should.be.nil
+    col[:color].should.be.nil
+  end
+
+  it "always sets type to calendar" do
+    mw = TM.new(Caldav::Calendar::Mkcalendar)
+    env = TM.env('MKCALENDAR', '/calendars/admin/typed/')
+    status, = mw.call(env)
+    status.should == 201
+    mw.storage.get_collection('/calendars/admin/typed/')[:type].should == :calendar
+  end
+
+  it "creates calendar with empty body" do
+    mw = TM.new(Caldav::Calendar::Mkcalendar)
+    env = TM.env('MKCALENDAR', '/calendars/admin/empty/')
+    status, = mw.call(env)
+    status.should == 201
+    mw.storage.collection_exists?('/calendars/admin/empty/').should.be.true
+  end
+
+  it "adds trailing slash to path" do
+    mw = TM.new(Caldav::Calendar::Mkcalendar)
+    env = TM.env('MKCALENDAR', '/calendars/admin/noslash')
+    status, = mw.call(env)
+    status.should == 201
+    mw.storage.collection_exists?('/calendars/admin/noslash/').should.be.true
   end
 end

@@ -104,3 +104,93 @@ module Caldav
     end
   end
 end
+
+test do
+  def self.etag(body)
+    %("#{Digest::SHA256.hexdigest(body)[0..15]}")
+  end
+
+  def self.normalize(xml)
+    xml.gsub(/>\s+</, '><').strip
+  end
+
+  it "renders exact propfind XML for an item" do
+    s = Caldav::Storage::Mock.new
+    body = 'BEGIN:VCALENDAR'
+    s.put_item('/calendars/admin/cal/ev.ics', body, 'text/calendar')
+    p = Caldav::Path.new('/calendars/admin/cal/ev.ics', storage_class: s)
+    item = Caldav::DavItem.find(p)
+    normalize(item.to_propfind_xml).should == normalize(<<~XML)
+      <d:response>
+        <d:href>/calendars/admin/cal/ev.ics</d:href>
+        <d:propstat>
+          <d:prop>
+            <d:getetag>#{Caldav::Xml.escape(etag(body))}</d:getetag>
+            <d:getcontenttype>text/calendar</d:getcontenttype>
+          </d:prop>
+          <d:status>HTTP/1.1 200 OK</d:status>
+        </d:propstat>
+      </d:response>
+    XML
+  end
+
+  it "renders exact report XML for a calendar item" do
+    s = Caldav::Storage::Mock.new
+    body = "BEGIN:VCALENDAR\r\nEND:VCALENDAR"
+    s.put_item('/cal/ev.ics', body, 'text/calendar')
+    p = Caldav::Path.new('/cal/ev.ics', storage_class: s)
+    item = Caldav::DavItem.find(p)
+    normalize(item.to_report_xml(data_tag: 'c:calendar-data')).should == normalize(<<~XML)
+      <d:response>
+        <d:href>/cal/ev.ics</d:href>
+        <d:propstat>
+          <d:prop>
+            <d:getetag>#{Caldav::Xml.escape(etag(body))}</d:getetag>
+            <c:calendar-data>#{Caldav::Xml.escape(body)}</c:calendar-data>
+          </d:prop>
+          <d:status>HTTP/1.1 200 OK</d:status>
+        </d:propstat>
+      </d:response>
+    XML
+  end
+
+  it "renders exact report XML for a contact" do
+    s = Caldav::Storage::Mock.new
+    body = "BEGIN:VCARD\r\nFN:Alice\r\nEND:VCARD"
+    s.put_item('/addr/c.vcf', body, 'text/vcard')
+    p = Caldav::Path.new('/addr/c.vcf', storage_class: s)
+    item = Caldav::DavItem.find(p)
+    normalize(item.to_report_xml(data_tag: 'cr:address-data')).should == normalize(<<~XML)
+      <d:response>
+        <d:href>/addr/c.vcf</d:href>
+        <d:propstat>
+          <d:prop>
+            <d:getetag>#{Caldav::Xml.escape(etag(body))}</d:getetag>
+            <cr:address-data>#{Caldav::Xml.escape(body)}</cr:address-data>
+          </d:prop>
+          <d:status>HTTP/1.1 200 OK</d:status>
+        </d:propstat>
+      </d:response>
+    XML
+  end
+
+  it "etag is quoted in propfind XML" do
+    s = Caldav::Storage::Mock.new
+    body = 'data'
+    s.put_item('/cal/ev.ics', body, 'text/calendar')
+    p = Caldav::Path.new('/cal/ev.ics', storage_class: s)
+    item = Caldav::DavItem.find(p)
+    normalize(item.to_propfind_xml).should == normalize(<<~XML)
+      <d:response>
+        <d:href>/cal/ev.ics</d:href>
+        <d:propstat>
+          <d:prop>
+            <d:getetag>#{Caldav::Xml.escape(etag(body))}</d:getetag>
+            <d:getcontenttype>text/calendar</d:getcontenttype>
+          </d:prop>
+          <d:status>HTTP/1.1 200 OK</d:status>
+        </d:propstat>
+      </d:response>
+    XML
+  end
+end

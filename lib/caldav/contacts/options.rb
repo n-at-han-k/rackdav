@@ -25,7 +25,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "returns 200 with DAV headers for /addressbooks/ path" do
     mw = TM.new(Caldav::Contacts::Options)

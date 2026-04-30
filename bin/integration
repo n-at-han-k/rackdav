@@ -1,0 +1,361 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Integration tests -- hits the real server with curl, validates full XML responses.
+# Expects the server running at BASE_URL (default http://localhost:9292)
+# with basic auth admin:admin.
+
+BASE_URL="${BASE_URL:-http://localhost:9292}"
+AUTH="admin:admin"
+PASS=0
+FAIL=0
+ERRORS=""
+
+normalize() {
+  # Collapse all runs of whitespace (including newlines) between > and < into nothing
+  tr '\n' ' ' | sed 's/>[[:space:]]*</></g; s/^[[:space:]]*//; s/[[:space:]]*$//'
+}
+
+assert_response() {
+  local test_name="$1"
+  local expected_status="$2"
+  local expected_body="$3"
+  local actual_status="$4"
+  local actual_body="$5"
+
+  local norm_expected norm_actual
+
+  if [ "$actual_status" != "$expected_status" ]; then
+    FAIL=$((FAIL + 1))
+    ERRORS="${ERRORS}\nFAIL ${test_name}: expected status ${expected_status}, got ${actual_status}"
+    echo "not ok - ${test_name} (status ${actual_status} != ${expected_status})"
+    return
+  fi
+
+  if [ -n "$expected_body" ]; then
+    norm_expected=$(echo "$expected_body" | normalize)
+    norm_actual=$(echo "$actual_body" | normalize)
+
+    if [ "$norm_actual" != "$norm_expected" ]; then
+      FAIL=$((FAIL + 1))
+      ERRORS="${ERRORS}\nFAIL ${test_name}:"
+      ERRORS="${ERRORS}\n  EXPECTED: ${norm_expected}"
+      ERRORS="${ERRORS}\n  ACTUAL:   ${norm_actual}"
+      # Show a diff for easier debugging
+      local diff_out
+      diff_out=$(diff <(echo "$norm_expected") <(echo "$norm_actual") || true)
+      ERRORS="${ERRORS}\n  DIFF:\n${diff_out}"
+      echo "not ok - ${test_name}"
+      return
+    fi
+  fi
+
+  PASS=$((PASS + 1))
+  echo "ok - ${test_name}"
+}
+
+dav() {
+  # dav METHOD PATH [extra curl args...]
+  # Returns "STATUS\nBODY" -- caller splits with head/tail.
+  local method="$1"
+  local path="$2"
+  shift 2
+  curl -s -o /dev/null -w '%{http_code}' -X "$method" -u "$AUTH" "$@" "${BASE_URL}${path}" 2>/dev/null || true
+}
+
+dav_full() {
+  # Returns status on fd3, body on stdout
+  local method="$1"
+  local path="$2"
+  shift 2
+  local tmpfile
+  tmpfile=$(mktemp)
+  local status
+  status=$(curl -s -o "$tmpfile" -w '%{http_code}' -X "$method" -u "$AUTH" "$@" "${BASE_URL}${path}" 2>/dev/null || true)
+  echo "$status"
+  cat "$tmpfile"
+  rm -f "$tmpfile"
+}
+
+echo "# Integration tests against ${BASE_URL}"
+echo ""
+
+# --------------------------------------------------------------------------
+# Clean slate -- delete any leftover test collections
+# --------------------------------------------------------------------------
+curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/" >/dev/null 2>&1 || true
+curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/" >/dev/null 2>&1 || true
+
+# ==========================================================================
+# TEST: OPTIONS returns DAV headers
+# ==========================================================================
+test_name="OPTIONS / returns DAV headers"
+headers=$(curl -s -D- -o /dev/null -X OPTIONS -u "$AUTH" "${BASE_URL}/" 2>/dev/null)
+status=$(echo "$headers" | head -1 | grep -o '[0-9][0-9][0-9]')
+if echo "$headers" | grep -qi 'dav:.*calendar-access'; then
+  PASS=$((PASS + 1))
+  echo "ok - ${test_name}"
+else
+  FAIL=$((FAIL + 1))
+  ERRORS="${ERRORS}\nFAIL ${test_name}: missing DAV header with calendar-access"
+  echo "not ok - ${test_name}"
+fi
+
+# ==========================================================================
+# TEST: PROPFIND / returns discovery XML
+# ==========================================================================
+test_name="PROPFIND / returns current-user-principal discovery"
+read -r status < <(dav_full PROPFIND / -H "Depth: 0" -H "Content-Type: text/xml" -d '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:current-user-principal/></d:prop></d:propfind>')
+body=$(dav_full PROPFIND / -H "Depth: 0" -H "Content-Type: text/xml" -d '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:current-user-principal/></d:prop></d:propfind>')
+actual_status=$(echo "$body" | head -1)
+actual_body=$(echo "$body" | tail -n +2)
+
+expected_body=$(cat <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:resourcetype><d:collection/></d:resourcetype>
+        <d:current-user-principal><d:href>/admin/</d:href></d:current-user-principal>
+        <c:calendar-home-set><d:href>/calendars/admin/</d:href></c:calendar-home-set>
+        <cr:addressbook-home-set><d:href>/addressbooks/admin/</d:href></cr:addressbook-home-set>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+XML
+)
+assert_response "$test_name" "207" "$expected_body" "$actual_status" "$actual_body"
+
+# ==========================================================================
+# TEST: MKCALENDAR creates a calendar
+# ==========================================================================
+test_name="MKCALENDAR creates calendar and returns 201"
+mkcal_body='<c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>IntTest Cal</d:displayname></d:prop></d:set></c:mkcalendar>'
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCALENDAR -u "$AUTH" -H "Content-Type: text/xml" -d "$mkcal_body" "${BASE_URL}/calendars/admin/inttest/" 2>/dev/null)
+assert_response "$test_name" "201" "" "$actual_status" ""
+
+# ==========================================================================
+# TEST: PROPFIND on the calendar at depth 0
+# ==========================================================================
+test_name="PROPFIND calendar collection depth 0 returns full response"
+result=$(dav_full PROPFIND /calendars/admin/inttest/ -H "Depth: 0" -H "Content-Type: text/xml")
+actual_status=$(echo "$result" | head -1)
+actual_body=$(echo "$result" | tail -n +2)
+
+# We can't predict ctag exactly (filesystem storage uses different formula),
+# so we normalize it out of both sides
+strip_ctag() {
+  sed 's/<cs:getctag>[^<]*<\/cs:getctag>/<cs:getctag>CTAG<\/cs:getctag>/g'
+}
+
+expected_body=$(cat <<'XML' | strip_ctag
+<?xml version="1.0" encoding="UTF-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/calendars/admin/inttest/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
+        <d:displayname>IntTest Cal</d:displayname>
+        <cs:getctag>CTAG</cs:getctag>
+        <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+XML
+)
+actual_body_stripped=$(echo "$actual_body" | strip_ctag)
+assert_response "$test_name" "207" "$expected_body" "$actual_status" "$actual_body_stripped"
+
+# ==========================================================================
+# TEST: PUT an event
+# ==========================================================================
+test_name="PUT event returns 201"
+event_body="BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:integration-test-1
+SUMMARY:Test Event
+DTSTART:20260501T100000Z
+DTEND:20260501T110000Z
+END:VEVENT
+END:VCALENDAR"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+  -H "Content-Type: text/calendar" \
+  --data-binary "$event_body" \
+  "${BASE_URL}/calendars/admin/inttest/ev1.ics" 2>/dev/null)
+assert_response "$test_name" "201" "" "$actual_status" ""
+
+# ==========================================================================
+# TEST: GET the event back
+# ==========================================================================
+test_name="GET event returns exact body"
+result=$(dav_full GET /calendars/admin/inttest/ev1.ics)
+actual_status=$(echo "$result" | head -1)
+actual_body=$(echo "$result" | tail -n +2)
+assert_response "$test_name" "200" "$event_body" "$actual_status" "$actual_body"
+
+# ==========================================================================
+# TEST: REPORT on the calendar returns the event
+# ==========================================================================
+test_name="REPORT returns event in calendar-data"
+result=$(dav_full REPORT /calendars/admin/inttest/ -H "Content-Type: text/xml" -d '<?xml version="1.0" encoding="UTF-8"?><c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop></c:calendar-query>')
+actual_status=$(echo "$result" | head -1)
+actual_body=$(echo "$result" | tail -n +2)
+# Check it's a valid 207 with the event data inside
+norm_actual=$(echo "$actual_body" | normalize)
+if [ "$actual_status" = "207" ] && echo "$norm_actual" | grep -q 'integration-test-1' && echo "$norm_actual" | grep -q 'c:calendar-data' && echo "$norm_actual" | grep -q 'getetag'; then
+  PASS=$((PASS + 1))
+  echo "ok - ${test_name}"
+else
+  FAIL=$((FAIL + 1))
+  ERRORS="${ERRORS}\nFAIL ${test_name}: status=${actual_status}, body missing expected elements"
+  echo "not ok - ${test_name}"
+fi
+
+# ==========================================================================
+# TEST: PROPPATCH updates displayname
+# ==========================================================================
+test_name="PROPPATCH updates displayname and returns 207 response"
+proppatch_body='<d:propertyupdate xmlns:d="DAV:"><d:set><d:prop><d:displayname>Renamed Cal</d:displayname></d:prop></d:set></d:propertyupdate>'
+result=$(dav_full PROPPATCH /calendars/admin/inttest/ -H "Content-Type: text/xml" -d "$proppatch_body")
+actual_status=$(echo "$result" | head -1)
+actual_body=$(echo "$result" | tail -n +2)
+
+expected_body=$(cat <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/calendars/admin/inttest/</d:href>
+    <d:propstat>
+      <d:prop/>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+XML
+)
+assert_response "$test_name" "207" "$expected_body" "$actual_status" "$actual_body"
+
+# ==========================================================================
+# TEST: PROPFIND confirms the rename
+# ==========================================================================
+test_name="PROPFIND after rename shows new displayname"
+result=$(dav_full PROPFIND /calendars/admin/inttest/ -H "Depth: 0" -H "Content-Type: text/xml")
+actual_status=$(echo "$result" | head -1)
+actual_body=$(echo "$result" | tail -n +2)
+norm_actual=$(echo "$actual_body" | normalize)
+if [ "$actual_status" = "207" ] && echo "$norm_actual" | grep -q '<d:displayname>Renamed Cal</d:displayname>'; then
+  PASS=$((PASS + 1))
+  echo "ok - ${test_name}"
+else
+  FAIL=$((FAIL + 1))
+  ERRORS="${ERRORS}\nFAIL ${test_name}: displayname not updated in response"
+  echo "not ok - ${test_name}"
+fi
+
+# ==========================================================================
+# TEST: DELETE event returns 204
+# ==========================================================================
+test_name="DELETE event returns 204"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/ev1.ics" 2>/dev/null)
+assert_response "$test_name" "204" "" "$actual_status" ""
+
+# ==========================================================================
+# TEST: GET deleted event returns 404
+# ==========================================================================
+test_name="GET deleted event returns 404"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X GET -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/ev1.ics" 2>/dev/null)
+assert_response "$test_name" "404" "" "$actual_status" ""
+
+# ==========================================================================
+# TEST: CardDAV -- MKCOL addressbook, PUT contact, REPORT
+# ==========================================================================
+test_name="MKCOL creates addressbook"
+mkcol_body='<d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:set><d:prop><d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype><d:displayname>IntTest Addr</d:displayname></d:prop></d:set></d:mkcol>'
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MKCOL -u "$AUTH" -H "Content-Type: text/xml" -d "$mkcol_body" "${BASE_URL}/addressbooks/admin/inttest/" 2>/dev/null)
+assert_response "$test_name" "201" "" "$actual_status" ""
+
+test_name="PUT contact returns 201"
+vcard="BEGIN:VCARD
+VERSION:3.0
+UID:int-contact-1
+FN:Alice Test
+END:VCARD"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+  -H "Content-Type: text/vcard" \
+  --data-binary "$vcard" \
+  "${BASE_URL}/addressbooks/admin/inttest/alice.vcf" 2>/dev/null)
+assert_response "$test_name" "201" "" "$actual_status" ""
+
+test_name="PROPFIND addressbook at depth 0"
+result=$(dav_full PROPFIND /addressbooks/admin/inttest/ -H "Depth: 0" -H "Content-Type: text/xml")
+actual_status=$(echo "$result" | head -1)
+actual_body=$(echo "$result" | tail -n +2)
+actual_body_stripped=$(echo "$actual_body" | strip_ctag)
+
+expected_body=$(cat <<'XML' | strip_ctag
+<?xml version="1.0" encoding="UTF-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+  <d:response>
+    <d:href>/addressbooks/admin/inttest/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
+        <d:displayname>IntTest Addr</d:displayname>
+        <cs:getctag>CTAG</cs:getctag>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>
+XML
+)
+assert_response "$test_name" "207" "$expected_body" "$actual_status" "$actual_body_stripped"
+
+test_name="REPORT addressbook returns contact with cr:address-data"
+result=$(dav_full REPORT /addressbooks/admin/inttest/ -H "Content-Type: text/xml" -d '<?xml version="1.0" encoding="UTF-8"?><cr:addressbook-query xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:prop><d:getetag/><cr:address-data/></d:prop></cr:addressbook-query>')
+actual_status=$(echo "$result" | head -1)
+actual_body=$(echo "$result" | tail -n +2)
+norm_actual=$(echo "$actual_body" | normalize)
+if [ "$actual_status" = "207" ] && echo "$norm_actual" | grep -q 'Alice Test' && echo "$norm_actual" | grep -q 'cr:address-data' && echo "$norm_actual" | grep -q 'getetag'; then
+  PASS=$((PASS + 1))
+  echo "ok - ${test_name}"
+else
+  FAIL=$((FAIL + 1))
+  ERRORS="${ERRORS}\nFAIL ${test_name}: status=${actual_status}"
+  echo "not ok - ${test_name}"
+fi
+
+# ==========================================================================
+# TEST: 401 without auth
+# ==========================================================================
+test_name="PROPFIND without auth returns 401"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PROPFIND -H "Depth: 0" "${BASE_URL}/calendars/admin/inttest/" 2>/dev/null)
+assert_response "$test_name" "401" "" "$actual_status" ""
+
+# ==========================================================================
+# Cleanup
+# ==========================================================================
+curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/" >/dev/null 2>&1 || true
+curl -s -X DELETE -u "$AUTH" "${BASE_URL}/addressbooks/admin/inttest/" >/dev/null 2>&1 || true
+
+# ==========================================================================
+# Summary
+# ==========================================================================
+echo ""
+TOTAL=$((PASS + FAIL))
+if [ "$FAIL" -gt 0 ]; then
+  echo -e "\033[31m# ${TOTAL} integration tests: ${PASS} passed, ${FAIL} failed\033[0m"
+  echo -e "$ERRORS"
+  exit 1
+else
+  echo -e "\033[32m# ${TOTAL} integration tests: ${PASS} passed, 0 failed\033[0m"
+  exit 0
+fi

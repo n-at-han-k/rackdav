@@ -36,7 +36,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "creates a new item and returns 201 with etag" do
     mw = TM.new(Caldav::Calendar::Put)
@@ -80,5 +80,44 @@ test do
     mw = TM.new(Caldav::Calendar::Put, nil, user: nil)
     status, = mw.call(TM.env('PUT', '/calendars/admin/cal/event.ics', body: 'data'))
     status.should == 401
+  end
+
+  it "returns etag header on 201 create" do
+    mw = TM.new(Caldav::Calendar::Put)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    env = TM.env('PUT', '/calendars/admin/cal/new.ics', body: 'BEGIN:VCALENDAR', content_type: 'text/calendar')
+    status, headers, = mw.call(env)
+    status.should == 201
+    headers['etag'].should.not.be.nil
+    headers['etag'].should.include '"'
+  end
+
+  it "returns etag header on 204 update" do
+    mw = TM.new(Caldav::Calendar::Put)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    mw.storage.put_item('/calendars/admin/cal/ev.ics', 'OLD', 'text/calendar')
+    env = TM.env('PUT', '/calendars/admin/cal/ev.ics', body: 'NEW', content_type: 'text/calendar')
+    status, headers, = mw.call(env)
+    status.should == 204
+    headers['etag'].should.not.be.nil
+    headers['etag'].should.include '"'
+  end
+
+  it "defaults content-type to text/calendar when not provided" do
+    mw = TM.new(Caldav::Calendar::Put)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    env = TM.env('PUT', '/calendars/admin/cal/ev.ics', body: 'BEGIN:VCALENDAR')
+    status, = mw.call(env)
+    status.should == 201
+    mw.storage.get_item('/calendars/admin/cal/ev.ics')[:body].should == 'BEGIN:VCALENDAR'
+  end
+
+  it "stores the body exactly as sent" do
+    mw = TM.new(Caldav::Calendar::Put)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    body = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Test\r\nEND:VEVENT\r\nEND:VCALENDAR"
+    env = TM.env('PUT', '/calendars/admin/cal/ev.ics', body: body, content_type: 'text/calendar')
+    mw.call(env)
+    mw.storage.get_item('/calendars/admin/cal/ev.ics')[:body].should == body
   end
 end

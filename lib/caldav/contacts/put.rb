@@ -36,7 +36,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "creates a new vcard and returns 201 with etag" do
     mw = TM.new(Caldav::Contacts::Put)

@@ -25,7 +25,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "returns 200 with DAV headers for /calendars/ path" do
     mw = TM.new(Caldav::Calendar::Options)

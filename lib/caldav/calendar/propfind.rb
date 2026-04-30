@@ -55,42 +55,18 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
-  it "returns 207 for an existing collection" do
-    mw = TM.new(Caldav::Calendar::Propfind)
-    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar, displayname: 'Test')
-    status, headers, = mw.call(TM.env('PROPFIND', '/calendars/admin/cal/', headers: { 'Depth' => '0' }))
-    status.should == 207
-    headers['content-type'].should.include 'xml'
+  def self.ctag(path, displayname, description = nil, color = nil)
+    Digest::SHA256.hexdigest("#{path}:#{displayname}:#{description}:#{color}")[0..15]
   end
 
-  it "returns 404 for non-existent deep path" do
-    mw = TM.new(Caldav::Calendar::Propfind)
-    status, = mw.call(TM.env('PROPFIND', '/calendars/admin/nope/nothing/', headers: { 'Depth' => '0' }))
-    status.should == 404
+  def self.etag(body)
+    %("#{Digest::SHA256.hexdigest(body)[0..15]}")
   end
 
-  it "lists child collections and items at depth 1" do
-    mw = TM.new(Caldav::Calendar::Propfind)
-    mw.storage.create_collection('/calendars/admin/', type: :collection)
-    mw.storage.create_collection('/calendars/admin/cal1/', type: :calendar, displayname: 'Cal1')
-    mw.storage.create_collection('/calendars/admin/cal2/', type: :calendar, displayname: 'Cal2')
-    mw.storage.put_item('/calendars/admin/cal1/event.ics', 'BEGIN:VCALENDAR', 'text/calendar')
-    status, _, body = mw.call(TM.env('PROPFIND', '/calendars/admin/', headers: { 'Depth' => '1' }))
-    status.should == 207
-    xml = body.first
-    xml.should.include 'Cal1'
-    xml.should.include 'Cal2'
-  end
-
-  it "returns propfind xml for a single item" do
-    mw = TM.new(Caldav::Calendar::Propfind)
-    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
-    mw.storage.put_item('/calendars/admin/cal/ev.ics', 'BEGIN:VCALENDAR', 'text/calendar')
-    status, _, body = mw.call(TM.env('PROPFIND', '/calendars/admin/cal/ev.ics', headers: { 'Depth' => '0' }))
-    status.should == 207
-    body.first.should.include 'getetag'
+  def self.normalize(xml)
+    xml.gsub(/>\s+</, '><').strip
   end
 
   it "passes through for non-calendar path" do
@@ -103,5 +79,221 @@ test do
     mw = TM.new(Caldav::Calendar::Propfind, nil, user: nil)
     status, = mw.call(TM.env('PROPFIND', '/calendars/admin/', headers: { 'Depth' => '0' }))
     status.should == 401
+  end
+
+  it "returns 404 for non-existent deep path" do
+    mw = TM.new(Caldav::Calendar::Propfind)
+    status, = mw.call(TM.env('PROPFIND', '/calendars/admin/nope/nothing/', headers: { 'Depth' => '0' }))
+    status.should == 404
+  end
+
+  it "returns full 207 response for a calendar collection at depth 0" do
+    mw = TM.new(Caldav::Calendar::Propfind)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar, displayname: 'My Cal')
+    status, headers, body = mw.call(TM.env('PROPFIND', '/calendars/admin/cal/', headers: { 'Depth' => '0' }))
+    status.should == 207
+    headers['content-type'].should == 'text/xml; charset=utf-8'
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/cal/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
+              <d:displayname>My Cal</d:displayname>
+              <cs:getctag>#{ctag('/calendars/admin/cal/', 'My Cal')}</cs:getctag>
+              <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns full 207 response for a single item at depth 0" do
+    mw = TM.new(Caldav::Calendar::Propfind)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    item_body = 'BEGIN:VCALENDAR'
+    mw.storage.put_item('/calendars/admin/cal/ev.ics', item_body, 'text/calendar')
+    status, _, body = mw.call(TM.env('PROPFIND', '/calendars/admin/cal/ev.ics', headers: { 'Depth' => '0' }))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/cal/ev.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(item_body))}</d:getetag>
+              <d:getcontenttype>text/calendar</d:getcontenttype>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns collection and children at depth 1" do
+    mw = TM.new(Caldav::Calendar::Propfind)
+    mw.storage.create_collection('/calendars/admin/', type: :collection)
+    mw.storage.create_collection('/calendars/admin/cal1/', type: :calendar, displayname: 'Cal1')
+    mw.storage.create_collection('/calendars/admin/cal2/', type: :calendar, displayname: 'Cal2')
+    status, _, body = mw.call(TM.env('PROPFIND', '/calendars/admin/', headers: { 'Depth' => '1' }))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype><d:collection/></d:resourcetype>
+              <cs:getctag>#{ctag('/calendars/admin/', nil)}</cs:getctag>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+        <d:response>
+          <d:href>/calendars/admin/cal1/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
+              <d:displayname>Cal1</d:displayname>
+              <cs:getctag>#{ctag('/calendars/admin/cal1/', 'Cal1')}</cs:getctag>
+              <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+        <d:response>
+          <d:href>/calendars/admin/cal2/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
+              <d:displayname>Cal2</d:displayname>
+              <cs:getctag>#{ctag('/calendars/admin/cal2/', 'Cal2')}</cs:getctag>
+              <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns collection with child items at depth 1" do
+    mw = TM.new(Caldav::Calendar::Propfind)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar, displayname: 'Cal')
+    ev1 = 'EVENT1'
+    ev2 = 'EVENT2'
+    mw.storage.put_item('/calendars/admin/cal/ev1.ics', ev1, 'text/calendar')
+    mw.storage.put_item('/calendars/admin/cal/ev2.ics', ev2, 'text/calendar')
+    status, _, body = mw.call(TM.env('PROPFIND', '/calendars/admin/cal/', headers: { 'Depth' => '1' }))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/cal/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
+              <d:displayname>Cal</d:displayname>
+              <cs:getctag>#{ctag('/calendars/admin/cal/', 'Cal')}</cs:getctag>
+              <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+        <d:response>
+          <d:href>/calendars/admin/cal/ev1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(ev1))}</d:getetag>
+              <d:getcontenttype>text/calendar</d:getcontenttype>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+        <d:response>
+          <d:href>/calendars/admin/cal/ev2.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(ev2))}</d:getetag>
+              <d:getcontenttype>text/calendar</d:getcontenttype>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns depth 0 with no children" do
+    mw = TM.new(Caldav::Calendar::Propfind)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar, displayname: 'Cal')
+    mw.storage.put_item('/calendars/admin/cal/ev.ics', 'BEGIN:VCALENDAR', 'text/calendar')
+    status, _, body = mw.call(TM.env('PROPFIND', '/calendars/admin/cal/', headers: { 'Depth' => '0' }))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/cal/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
+              <d:displayname>Cal</d:displayname>
+              <cs:getctag>#{ctag('/calendars/admin/cal/', 'Cal')}</cs:getctag>
+              <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns 207 for /calendars/ path fallback" do
+    mw = TM.new(Caldav::Calendar::Propfind)
+    status, _, body = mw.call(TM.env('PROPFIND', '/calendars/', headers: { 'Depth' => '0' }))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype><d:collection/></d:resourcetype>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns 207 for /calendars/admin/ path fallback" do
+    mw = TM.new(Caldav::Calendar::Propfind)
+    status, _, body = mw.call(TM.env('PROPFIND', '/calendars/admin/', headers: { 'Depth' => '0' }))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:resourcetype><d:collection/></d:resourcetype>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
   end
 end

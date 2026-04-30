@@ -31,51 +31,19 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
-  it "returns 207 with contact data for addressbook report" do
-    mw = TM.new(Caldav::Contacts::Report)
-    mw.storage.create_collection('/addressbooks/admin/addr/', type: :addressbook)
-    mw.storage.put_item('/addressbooks/admin/addr/contact.vcf', 'BEGIN:VCARD', 'text/vcard')
-    env = TM.env('REPORT', '/addressbooks/admin/addr/')
-    status, headers, body = mw.call(env)
-    status.should == 207
-    headers['content-type'].should.include 'xml'
-    body.first.should.include 'VCARD'
+  def self.etag(body)
+    %("#{Digest::SHA256.hexdigest(body)[0..15]}")
   end
 
-  it "returns well-formed multistatus XML with d:response elements" do
-    mw = TM.new(Caldav::Contacts::Report)
-    mw.storage.create_collection('/addressbooks/admin/addr/', type: :addressbook)
-    mw.storage.put_item('/addressbooks/admin/addr/c1.vcf', 'BEGIN:VCARD\nCONTACT1\nEND:VCARD', 'text/vcard')
-    mw.storage.put_item('/addressbooks/admin/addr/c2.vcf', 'BEGIN:VCARD\nCONTACT2\nEND:VCARD', 'text/vcard')
-    env = TM.env('REPORT', '/addressbooks/admin/addr/')
-    status, _, body = mw.call(env)
-    status.should == 207
-    xml = body.first
-    xml.should.include 'd:multistatus'
-    xml.should.include 'd:response'
-    xml.should.include 'd:href'
-    xml.should.include 'cr:address-data'
-    xml.should.include 'CONTACT1'
-    xml.should.include 'CONTACT2'
-  end
-
-  it "returns empty multistatus for addressbook with no items" do
-    mw = TM.new(Caldav::Contacts::Report)
-    mw.storage.create_collection('/addressbooks/admin/empty/', type: :addressbook)
-    env = TM.env('REPORT', '/addressbooks/admin/empty/')
-    status, _, body = mw.call(env)
-    status.should == 207
-    xml = body.first
-    xml.should.include 'd:multistatus'
-    xml.should.not.include 'd:response'
+  def self.normalize(xml)
+    xml.gsub(/>\s+</, '><').strip
   end
 
   it "passes through for non-addressbook path" do
     mw = TM.new(Caldav::Contacts::Report)
-    env = TM.env('REPORT', '/calendars/admin/cal/')
-    status, = mw.call(env)
+    status, = mw.call(TM.env('REPORT', '/calendars/admin/cal/'))
     status.should == 999
   end
 
@@ -83,5 +51,78 @@ test do
     mw = TM.new(Caldav::Contacts::Report, nil, user: nil)
     status, = mw.call(TM.env('REPORT', '/addressbooks/admin/addr/'))
     status.should == 401
+  end
+
+  it "returns full 207 report for a single contact" do
+    mw = TM.new(Caldav::Contacts::Report)
+    mw.storage.create_collection('/addressbooks/admin/addr/', type: :addressbook)
+    card = 'BEGIN:VCARD'
+    mw.storage.put_item('/addressbooks/admin/addr/c.vcf', card, 'text/vcard')
+    status, headers, body = mw.call(TM.env('REPORT', '/addressbooks/admin/addr/'))
+    status.should == 207
+    headers['content-type'].should == 'text/xml; charset=utf-8'
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/addressbooks/admin/addr/c.vcf</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(card))}</d:getetag>
+              <cr:address-data>#{Caldav::Xml.escape(card)}</cr:address-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns full 207 report for multiple contacts" do
+    mw = TM.new(Caldav::Contacts::Report)
+    mw.storage.create_collection('/addressbooks/admin/addr/', type: :addressbook)
+    alice = 'ALICE'
+    bob = 'BOB'
+    mw.storage.put_item('/addressbooks/admin/addr/a.vcf', alice, 'text/vcard')
+    mw.storage.put_item('/addressbooks/admin/addr/b.vcf', bob, 'text/vcard')
+    status, _, body = mw.call(TM.env('REPORT', '/addressbooks/admin/addr/'))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/addressbooks/admin/addr/a.vcf</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(alice))}</d:getetag>
+              <cr:address-data>#{Caldav::Xml.escape(alice)}</cr:address-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+        <d:response>
+          <d:href>/addressbooks/admin/addr/b.vcf</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(bob))}</d:getetag>
+              <cr:address-data>#{Caldav::Xml.escape(bob)}</cr:address-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns empty multistatus for addressbook with no items" do
+    mw = TM.new(Caldav::Contacts::Report)
+    mw.storage.create_collection('/addressbooks/admin/empty/', type: :addressbook)
+    status, _, body = mw.call(TM.env('REPORT', '/addressbooks/admin/empty/'))
+    status.should == 207
+    normalize(body.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+      </d:multistatus>
+    XML
   end
 end

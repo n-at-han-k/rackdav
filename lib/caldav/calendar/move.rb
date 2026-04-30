@@ -50,7 +50,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "moves an item and returns 201" do
     mw = TM.new(Caldav::Calendar::Move)
@@ -117,5 +117,30 @@ test do
     status, = mw.call(TM.env('MOVE', '/calendars/admin/cal/a.ics',
                  headers: { 'Destination' => 'http://localhost/calendars/admin/cal/b.ics' }))
     status.should == 401
+  end
+
+  it "source item no longer exists after move" do
+    mw = TM.new(Caldav::Calendar::Move)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    mw.storage.put_item('/calendars/admin/cal/src.ics', 'MOVED-DATA', 'text/calendar')
+    env = TM.env('MOVE', '/calendars/admin/cal/src.ics',
+                 headers: { 'Destination' => 'http://localhost/calendars/admin/cal/dst.ics' })
+    status, = mw.call(env)
+    status.should == 201
+    mw.storage.get_item('/calendars/admin/cal/src.ics').should.be.nil
+    mw.storage.get_item('/calendars/admin/cal/dst.ics')[:body].should == 'MOVED-DATA'
+  end
+
+  it "moves between different collections" do
+    mw = TM.new(Caldav::Calendar::Move)
+    mw.storage.create_collection('/calendars/admin/cal1/', type: :calendar)
+    mw.storage.create_collection('/calendars/admin/cal2/', type: :calendar)
+    mw.storage.put_item('/calendars/admin/cal1/ev.ics', 'CROSS-MOVE', 'text/calendar')
+    env = TM.env('MOVE', '/calendars/admin/cal1/ev.ics',
+                 headers: { 'Destination' => 'http://localhost/calendars/admin/cal2/ev.ics' })
+    status, = mw.call(env)
+    status.should == 201
+    mw.storage.get_item('/calendars/admin/cal1/ev.ics').should.be.nil
+    mw.storage.get_item('/calendars/admin/cal2/ev.ics')[:body].should == 'CROSS-MOVE'
   end
 end

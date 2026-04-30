@@ -29,7 +29,7 @@ module Caldav
 end
 
 test do
-  TM = Caldav::Storage::TestMiddleware
+  TM = Caldav::TestMiddleware
 
   it "returns same status and headers as GET but empty body" do
     mw = TM.new(Caldav::Contacts::Head)

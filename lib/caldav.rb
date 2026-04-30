@@ -24,7 +24,8 @@ end
   caldav/path
   caldav/storage
   caldav/storage/mock
-  caldav/storage/test_middleware
+  caldav/storage/filesystem
+  caldav/test_middleware
   caldav/dav_collection
   caldav/dav_item
 ].each { |f| require_relative f }

@@ -2,12 +2,16 @@ FROM ruby:3.4
 
 WORKDIR /app
 
-COPY Gemfile Gemfile.lock caldav.gemspec ./
-COPY lib/caldav/version.rb ./lib/caldav/version.rb
-RUN bundle install
+COPY caldav.gemspec Gemfile ./
+COPY lib/ lib/
+
+COPY example/Gemfile example/Gemfile
+RUN cd example && bundle install --jobs 4
 
 COPY . .
-RUN chmod +x service.rb
 
-EXPOSE 3000
-CMD ["bundle", "exec", "./service.rb"]
+EXPOSE 9292
+
+WORKDIR /app/example
+
+CMD ["bundle", "exec", "falcon", "host"]

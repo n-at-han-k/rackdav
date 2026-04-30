@@ -36,5 +36,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rack-test', '~> 2.0'
   spec.add_development_dependency 'base64'
   spec.add_development_dependency 'falcon'
+  spec.add_development_dependency 'rackup'
 
 end

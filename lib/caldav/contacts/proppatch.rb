@@ -106,7 +106,13 @@ test do
   it "preserves unmodified properties when updating displayname only" do
     mw = TM.new(Caldav::Contacts::Proppatch)
     mw.storage.create_collection('/addressbooks/admin/addr/', type: :addressbook, displayname: 'Old Name')
-    body = '<d:propertyupdate xmlns:d="DAV:"><d:set><d:prop><d:displayname>New Name</d:displayname></d:prop></d:set></d:propertyupdate>'
+    body = <<~XML
+      <d:propertyupdate xmlns:d="DAV:">
+        <d:set><d:prop>
+          <d:displayname>New Name</d:displayname>
+        </d:prop></d:set>
+      </d:propertyupdate>
+    XML
     status, _, resp = mw.call(TM.env('PROPPATCH', '/addressbooks/admin/addr/', body: body))
     status.should == 207
     col = mw.storage.get_collection('/addressbooks/admin/addr/')

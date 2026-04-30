@@ -142,7 +142,14 @@ test do
     mock = Caldav::Storage::Mock.new
     app = Caldav::App.new(storage: mock)
 
-    env = TM.env('MKCALENDAR', '/calendars/admin/work/', body: '<c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>Work</d:displayname></d:prop></d:set></c:mkcalendar>')
+    body = <<~XML
+      <c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:set><d:prop>
+          <d:displayname>Work</d:displayname>
+        </d:prop></d:set>
+      </c:mkcalendar>
+    XML
+    env = TM.env('MKCALENDAR', '/calendars/admin/work/', body: body)
     env['dav.user'] = 'admin'
     status, = app.call(env)
     status.should == 201

@@ -341,6 +341,162 @@ actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PROPFIND -H "Depth: 0"
 assert_response "$test_name" "401" "" "$actual_status" ""
 
 # ==========================================================================
+# TEST: ETag round-trip -- PUT, get ETag, PUT with If-Match
+# ==========================================================================
+test_name="PUT with correct If-Match ETag updates event"
+# First create a fresh event
+ev_etag_body="BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:etag-round-trip
+SUMMARY:ETag Test V1
+DTSTART:20260601T100000Z
+END:VEVENT
+END:VCALENDAR"
+# Get the ETag from the PUT response
+put_etag=$(curl -s -D- -o /dev/null -X PUT -u "$AUTH" \
+  -H "Content-Type: text/calendar" \
+  --data-binary "$ev_etag_body" \
+  "${BASE_URL}/calendars/admin/inttest/etag-test.ics" 2>/dev/null | grep -i '^etag:' | tr -d '\r' | awk '{print $2}')
+
+ev_etag_body2="BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:etag-round-trip
+SUMMARY:ETag Test V2
+DTSTART:20260601T100000Z
+END:VEVENT
+END:VCALENDAR"
+# PUT with correct ETag should succeed
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+  -H "Content-Type: text/calendar" \
+  -H "If-Match: ${put_etag}" \
+  --data-binary "$ev_etag_body2" \
+  "${BASE_URL}/calendars/admin/inttest/etag-test.ics" 2>/dev/null)
+assert_response "$test_name" "204" "" "$actual_status" ""
+
+test_name="PUT with wrong If-Match ETag returns 412"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+  -H "Content-Type: text/calendar" \
+  -H 'If-Match: "totally-wrong"' \
+  --data-binary "$ev_etag_body2" \
+  "${BASE_URL}/calendars/admin/inttest/etag-test.ics" 2>/dev/null)
+assert_response "$test_name" "412" "" "$actual_status" ""
+
+test_name="PUT with If-None-Match * on existing returns 412"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+  -H "Content-Type: text/calendar" \
+  -H 'If-None-Match: *' \
+  --data-binary "$ev_etag_body2" \
+  "${BASE_URL}/calendars/admin/inttest/etag-test.ics" 2>/dev/null)
+assert_response "$test_name" "412" "" "$actual_status" ""
+
+# ==========================================================================
+# TEST: Body validation -- malformed body returns 400
+# ==========================================================================
+test_name="PUT with invalid calendar body returns 400"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+  -H "Content-Type: text/calendar" \
+  --data-binary "NOT A CALENDAR" \
+  "${BASE_URL}/calendars/admin/inttest/bad.ics" 2>/dev/null)
+assert_response "$test_name" "400" "" "$actual_status" ""
+
+test_name="PUT with invalid vcard body returns 400"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -u "$AUTH" \
+  -H "Content-Type: text/vcard" \
+  --data-binary "NOT A VCARD" \
+  "${BASE_URL}/addressbooks/admin/inttest/bad.vcf" 2>/dev/null)
+assert_response "$test_name" "400" "" "$actual_status" ""
+
+# ==========================================================================
+# TEST: MOVE within same collection
+# ==========================================================================
+test_name="MOVE event within collection returns 201"
+move_ev="BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:move-int-test
+SUMMARY:Move Me
+DTSTART:20260601T100000Z
+END:VEVENT
+END:VCALENDAR"
+curl -s -o /dev/null -X PUT -u "$AUTH" \
+  -H "Content-Type: text/calendar" \
+  --data-binary "$move_ev" \
+  "${BASE_URL}/calendars/admin/inttest/move-src.ics" 2>/dev/null
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X MOVE -u "$AUTH" \
+  -H "Destination: ${BASE_URL}/calendars/admin/inttest/move-dst.ics" \
+  "${BASE_URL}/calendars/admin/inttest/move-src.ics" 2>/dev/null)
+assert_response "$test_name" "201" "" "$actual_status" ""
+
+test_name="GET moved event at new path returns 200"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X GET -u "$AUTH" \
+  "${BASE_URL}/calendars/admin/inttest/move-dst.ics" 2>/dev/null)
+assert_response "$test_name" "200" "" "$actual_status" ""
+
+test_name="GET moved event at old path returns 404"
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X GET -u "$AUTH" \
+  "${BASE_URL}/calendars/admin/inttest/move-src.ics" 2>/dev/null)
+assert_response "$test_name" "404" "" "$actual_status" ""
+
+# ==========================================================================
+# TEST: PROPPATCH remove property
+# ==========================================================================
+test_name="PROPPATCH remove displayname returns 207"
+remove_body='<d:propertyupdate xmlns:d="DAV:"><d:remove><d:prop><d:displayname/></d:prop></d:remove></d:propertyupdate>'
+actual_status=$(curl -s -o /dev/null -w '%{http_code}' -X PROPPATCH -u "$AUTH" \
+  -H "Content-Type: text/xml" \
+  -d "$remove_body" \
+  "${BASE_URL}/calendars/admin/inttest/" 2>/dev/null)
+assert_response "$test_name" "207" "" "$actual_status" ""
+
+# ==========================================================================
+# TEST: REPORT with comp-filter VEVENT filters results
+# ==========================================================================
+test_name="REPORT with comp-filter VEVENT excludes VTODOs"
+# Add a VTODO to the calendar
+vtodo="BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:todo-filter-test
+SUMMARY:FilteredTask
+END:VTODO
+END:VCALENDAR"
+curl -s -o /dev/null -X PUT -u "$AUTH" \
+  -H "Content-Type: text/calendar" \
+  --data-binary "$vtodo" \
+  "${BASE_URL}/calendars/admin/inttest/todo.ics" 2>/dev/null
+
+report_filter='<?xml version="1.0" encoding="UTF-8"?><c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop><c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"/></c:comp-filter></c:filter></c:calendar-query>'
+result=$(dav_full REPORT /calendars/admin/inttest/ -H "Content-Type: text/xml" -d "$report_filter")
+actual_status=$(echo "$result" | head -1)
+actual_body=$(echo "$result" | tail -n +2)
+norm_actual=$(echo "$actual_body" | normalize)
+if [ "$actual_status" = "207" ] && ! echo "$norm_actual" | grep -q 'FilteredTask'; then
+  PASS=$((PASS + 1))
+  echo "ok - ${test_name}"
+else
+  FAIL=$((FAIL + 1))
+  ERRORS="${ERRORS}\nFAIL ${test_name}: VTODO should be filtered out but wasn't"
+  echo "not ok - ${test_name}"
+fi
+
+# ==========================================================================
+# TEST: HEAD returns same status as GET with empty body
+# ==========================================================================
+test_name="HEAD on event returns 200 with empty body"
+head_result=$(curl -s -D- -o /dev/null -X HEAD -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/etag-test.ics" 2>/dev/null)
+head_status=$(echo "$head_result" | head -1 | grep -o '[0-9][0-9][0-9]')
+if [ "$head_status" = "200" ]; then
+  PASS=$((PASS + 1))
+  echo "ok - ${test_name}"
+else
+  FAIL=$((FAIL + 1))
+  ERRORS="${ERRORS}\nFAIL ${test_name}: expected 200, got ${head_status}"
+  echo "not ok - ${test_name}"
+fi
+
+# ==========================================================================
 # Cleanup
 # ==========================================================================
 curl -s -X DELETE -u "$AUTH" "${BASE_URL}/calendars/admin/inttest/" >/dev/null 2>&1 || true

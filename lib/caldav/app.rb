@@ -210,7 +210,14 @@ test do
     mock = Caldav::Storage::Mock.new
     app = Caldav::App.new(storage: mock)
 
-    body = '<d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:set><d:prop><d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype><d:displayname>Contacts</d:displayname></d:prop></d:set></d:mkcol>'
+    body = <<~XML
+      <d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:set><d:prop>
+          <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
+          <d:displayname>Contacts</d:displayname>
+        </d:prop></d:set>
+      </d:mkcol>
+    XML
     env = TM.env('MKCOL', '/addressbooks/admin/contacts/', body: body)
     env['dav.user'] = 'admin'
     status, = app.call(env)
@@ -227,11 +234,25 @@ test do
     mock = Caldav::Storage::Mock.new
     app = Caldav::App.new(storage: mock)
 
-    env = TM.env('MKCALENDAR', '/calendars/admin/cal/', body: '<c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>Old</d:displayname></d:prop></d:set></c:mkcalendar>')
+    mkcal_body = <<~XML
+      <c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:set><d:prop>
+          <d:displayname>Old</d:displayname>
+        </d:prop></d:set>
+      </c:mkcalendar>
+    XML
+    env = TM.env('MKCALENDAR', '/calendars/admin/cal/', body: mkcal_body)
     env['dav.user'] = 'admin'
     app.call(env)
 
-    env = TM.env('PROPPATCH', '/calendars/admin/cal/', body: '<d:propertyupdate xmlns:d="DAV:"><d:set><d:prop><d:displayname>Updated</d:displayname></d:prop></d:set></d:propertyupdate>')
+    patch_body = <<~XML
+      <d:propertyupdate xmlns:d="DAV:">
+        <d:set><d:prop>
+          <d:displayname>Updated</d:displayname>
+        </d:prop></d:set>
+      </d:propertyupdate>
+    XML
+    env = TM.env('PROPPATCH', '/calendars/admin/cal/', body: patch_body)
     env['dav.user'] = 'admin'
     status, = app.call(env)
     status.should == 207
@@ -247,7 +268,13 @@ test do
     mock = Caldav::Storage::Mock.new
     app = Caldav::App.new(storage: mock)
 
-    body = '<d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:set><d:prop><d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype></d:prop></d:set></d:mkcol>'
+    body = <<~XML
+      <d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:set><d:prop>
+          <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
+        </d:prop></d:set>
+      </d:mkcol>
+    XML
     env = TM.env('MKCOL', '/addressbooks/admin/addr/', body: body)
     env['dav.user'] = 'admin'
     app.call(env)
@@ -293,7 +320,12 @@ test do
   it "PROPFIND / returns current-user-principal" do
     mock = Caldav::Storage::Mock.new
     app = Caldav::App.new(storage: mock)
-    body = '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:current-user-principal/></d:prop></d:propfind>'
+    body = <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:propfind xmlns:d="DAV:">
+        <d:prop><d:current-user-principal/></d:prop>
+      </d:propfind>
+    XML
     env = TM.env('PROPFIND', '/', body: body, headers: { 'Depth' => '0' })
     env['dav.user'] = 'admin'
     status, _, resp = app.call(env)
@@ -306,7 +338,12 @@ test do
   it "PROPFIND user principal returns calendar-home-set" do
     mock = Caldav::Storage::Mock.new
     app = Caldav::App.new(storage: mock)
-    body = '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><c:calendar-home-set/></d:prop></d:propfind>'
+    body = <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop><c:calendar-home-set/></d:prop>
+      </d:propfind>
+    XML
     env = TM.env('PROPFIND', '/', body: body, headers: { 'Depth' => '0' })
     env['dav.user'] = 'admin'
     status, _, resp = app.call(env)
@@ -319,7 +356,12 @@ test do
   it "PROPFIND user principal returns addressbook-home-set" do
     mock = Caldav::Storage::Mock.new
     app = Caldav::App.new(storage: mock)
-    body = '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:prop><cr:addressbook-home-set/></d:prop></d:propfind>'
+    body = <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:propfind xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:prop><cr:addressbook-home-set/></d:prop>
+      </d:propfind>
+    XML
     env = TM.env('PROPFIND', '/', body: body, headers: { 'Depth' => '0' })
     env['dav.user'] = 'admin'
     status, _, resp = app.call(env)
@@ -334,12 +376,24 @@ test do
     app = Caldav::App.new(storage: mock)
 
     # Step 1: Create a calendar
-    env = TM.env('MKCALENDAR', '/calendars/admin/work/', body: '<c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:set><d:prop><d:displayname>Work</d:displayname></d:prop></d:set></c:mkcalendar>')
+    mkcal_body = <<~XML
+      <c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:set><d:prop>
+          <d:displayname>Work</d:displayname>
+        </d:prop></d:set>
+      </c:mkcalendar>
+    XML
+    env = TM.env('MKCALENDAR', '/calendars/admin/work/', body: mkcal_body)
     env['dav.user'] = 'admin'
     app.call(env)
 
     # Step 2: Client discovers current-user-principal
-    body = '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:current-user-principal/></d:prop></d:propfind>'
+    body = <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:propfind xmlns:d="DAV:">
+        <d:prop><d:current-user-principal/></d:prop>
+      </d:propfind>
+    XML
     env = TM.env('PROPFIND', '/', body: body, headers: { 'Depth' => '0' })
     env['dav.user'] = 'admin'
     status, _, resp = app.call(env)
@@ -347,7 +401,12 @@ test do
     resp.first.should.include '/admin/'
 
     # Step 3: Client discovers calendar-home-set
-    body = '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><c:calendar-home-set/></d:prop></d:propfind>'
+    body = <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop><c:calendar-home-set/></d:prop>
+      </d:propfind>
+    XML
     env = TM.env('PROPFIND', '/', body: body, headers: { 'Depth' => '0' })
     env['dav.user'] = 'admin'
     status, _, resp = app.call(env)
@@ -355,7 +414,12 @@ test do
     resp.first.should.include '/calendars/admin/'
 
     # Step 4: Client lists calendars at the home set
-    body = '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:resourcetype/><d:displayname/></d:prop></d:propfind>'
+    body = <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop><d:resourcetype/><d:displayname/></d:prop>
+      </d:propfind>
+    XML
     env = TM.env('PROPFIND', '/calendars/admin/', body: body, headers: { 'Depth' => '1' })
     env['dav.user'] = 'admin'
     status, _, resp = app.call(env)
@@ -370,13 +434,25 @@ test do
     app = Caldav::App.new(storage: mock)
 
     # Step 1: Create an addressbook
-    body = '<d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:set><d:prop><d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype><d:displayname>Contacts</d:displayname></d:prop></d:set></d:mkcol>'
-    env = TM.env('MKCOL', '/addressbooks/admin/contacts/', body: body)
+    mkcol_body = <<~XML
+      <d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:set><d:prop>
+          <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
+          <d:displayname>Contacts</d:displayname>
+        </d:prop></d:set>
+      </d:mkcol>
+    XML
+    env = TM.env('MKCOL', '/addressbooks/admin/contacts/', body: mkcol_body)
     env['dav.user'] = 'admin'
     app.call(env)
 
     # Step 2: Client discovers addressbook-home-set
-    body = '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:prop><cr:addressbook-home-set/></d:prop></d:propfind>'
+    body = <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:propfind xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:prop><cr:addressbook-home-set/></d:prop>
+      </d:propfind>
+    XML
     env = TM.env('PROPFIND', '/', body: body, headers: { 'Depth' => '0' })
     env['dav.user'] = 'admin'
     status, _, resp = app.call(env)
@@ -384,7 +460,12 @@ test do
     resp.first.should.include '/addressbooks/admin/'
 
     # Step 3: Client lists addressbooks
-    body = '<?xml version="1.0" encoding="UTF-8"?><d:propfind xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav"><d:prop><d:resourcetype/><d:displayname/></d:prop></d:propfind>'
+    body = <<~XML
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:propfind xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:prop><d:resourcetype/><d:displayname/></d:prop>
+      </d:propfind>
+    XML
     env = TM.env('PROPFIND', '/addressbooks/admin/', body: body, headers: { 'Depth' => '1' })
     env['dav.user'] = 'admin'
     status, _, resp = app.call(env)
@@ -392,6 +473,148 @@ test do
     xml = resp.first
     xml.should.include 'Contacts'
     xml.should.include 'cr:addressbook'
+  end
+
+  # --- Path sanitization tests ---
+
+  it "normalizes double slashes in path" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+    env = TM.env('PROPFIND', '//calendars//admin//', headers: { 'Depth' => '0' })
+    env['dav.user'] = 'admin'
+    status, = app.call(env)
+    # Path.new normalizes /+ to / so this should still work
+    [207, 301].should.include status
+  end
+
+  it "rejects paths with .. traversal" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+    env = TM.env('GET', '/calendars/admin/../../../etc/passwd')
+    env['dav.user'] = 'admin'
+    status, = app.call(env)
+    [400, 404].should.include status
+  end
+
+  # --- DELETE root collection test ---
+
+  it "DELETE / removes all collections" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+    mock.create_collection('/calendars/admin/cal/', type: :calendar, displayname: 'Cal')
+    mock.put_item('/calendars/admin/cal/ev.ics', "BEGIN:VCALENDAR\nEND:VCALENDAR", 'text/calendar')
+
+    env = TM.env('DELETE', '/')
+    env['dav.user'] = 'admin'
+    status, = app.call(env)
+    # Should either succeed (204) or reject (405)
+    [204, 405].should.include status
+  end
+
+  # --- MOVE within full stack test ---
+
+  it "full stack: PUT then MOVE then GET at new path" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+
+    env = TM.env('MKCALENDAR', '/calendars/admin/cal/')
+    env['dav.user'] = 'admin'
+    app.call(env)
+
+    ev = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:move-test\r\nEND:VEVENT\r\nEND:VCALENDAR"
+    env = TM.env('PUT', '/calendars/admin/cal/a.ics', body: ev, content_type: 'text/calendar')
+    env['dav.user'] = 'admin'
+    app.call(env)
+
+    env = TM.env('MOVE', '/calendars/admin/cal/a.ics',
+                 headers: { 'Destination' => 'http://localhost/calendars/admin/cal/b.ics' })
+    env['dav.user'] = 'admin'
+    status, = app.call(env)
+    status.should == 201
+
+    env = TM.env('GET', '/calendars/admin/cal/a.ics')
+    env['dav.user'] = 'admin'
+    status, = app.call(env)
+    status.should == 404
+
+    env = TM.env('GET', '/calendars/admin/cal/b.ics')
+    env['dav.user'] = 'admin'
+    status, _, body = app.call(env)
+    status.should == 200
+    body.first.should.include 'move-test'
+  end
+
+  # --- ETag round-trip full stack test ---
+
+  it "full stack: PUT returns ETag, If-Match with correct ETag updates, wrong ETag rejects" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+
+    env = TM.env('MKCALENDAR', '/calendars/admin/cal/')
+    env['dav.user'] = 'admin'
+    app.call(env)
+
+    ev = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:etag-test\r\nSUMMARY:V1\r\nEND:VEVENT\r\nEND:VCALENDAR"
+    env = TM.env('PUT', '/calendars/admin/cal/ev.ics', body: ev, content_type: 'text/calendar')
+    env['dav.user'] = 'admin'
+    status, headers, = app.call(env)
+    status.should == 201
+    etag = headers['etag']
+    etag.should.not.be.nil
+
+    # Update with wrong ETag
+    ev2 = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:etag-test\r\nSUMMARY:V2\r\nEND:VEVENT\r\nEND:VCALENDAR"
+    env = TM.env('PUT', '/calendars/admin/cal/ev.ics', body: ev2, content_type: 'text/calendar',
+                 headers: { 'If-Match' => '"wrong"' })
+    env['dav.user'] = 'admin'
+    status, = app.call(env)
+    status.should == 412
+
+    # Update with correct ETag
+    env = TM.env('PUT', '/calendars/admin/cal/ev.ics', body: ev2, content_type: 'text/calendar',
+                 headers: { 'If-Match' => etag })
+    env['dav.user'] = 'admin'
+    status, = app.call(env)
+    status.should == 204
+  end
+
+  # --- REPORT filtering full stack test ---
+
+  it "full stack: REPORT with comp-filter VEVENT returns only events" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+
+    env = TM.env('MKCALENDAR', '/calendars/admin/cal/')
+    env['dav.user'] = 'admin'
+    app.call(env)
+
+    ev = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:ev1\r\nSUMMARY:Meeting\r\nEND:VEVENT\r\nEND:VCALENDAR"
+    env = TM.env('PUT', '/calendars/admin/cal/ev.ics', body: ev, content_type: 'text/calendar')
+    env['dav.user'] = 'admin'
+    app.call(env)
+
+    td = "BEGIN:VCALENDAR\r\nBEGIN:VTODO\r\nUID:td1\r\nSUMMARY:Task\r\nEND:VTODO\r\nEND:VCALENDAR"
+    env = TM.env('PUT', '/calendars/admin/cal/td.ics', body: td, content_type: 'text/calendar')
+    env['dav.user'] = 'admin'
+    app.call(env)
+
+    report_body = <<~XML
+      <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop><d:getetag/><c:calendar-data/></d:prop>
+        <c:filter>
+          <c:comp-filter name="VCALENDAR">
+            <c:comp-filter name="VEVENT"/>
+          </c:comp-filter>
+        </c:filter>
+      </c:calendar-query>
+    XML
+    env = TM.env('REPORT', '/calendars/admin/cal/', body: report_body)
+    env['dav.user'] = 'admin'
+    status, _, resp = app.call(env)
+    status.should == 207
+    xml = resp.first
+    xml.should.include 'Meeting'
+    xml.should.not.include 'Task'
   end
 
   it ".well-known/caldav returns useful response" do

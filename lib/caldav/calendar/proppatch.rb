@@ -31,6 +31,13 @@ module Caldav
             color = Xml.extract_value(body, 'calendar-color')
             updates[:color] = color if color
 
+            # Handle d:remove
+            if body.include?('<d:remove') || body.include?('<D:remove')
+              updates[:displayname] = nil if body.match?(/<[^>]*remove[^>]*>.*displayname/m) && !dn
+              updates[:description] = nil if body.match?(/<[^>]*remove[^>]*>.*calendar-description/m) && !desc
+              updates[:color] = nil if body.match?(/<[^>]*remove[^>]*>.*calendar-color/m) && !color
+            end
+
             collection.update(updates)
 
             result = Multistatus.new([<<~XML]).to_xml
@@ -102,6 +109,54 @@ test do
         </d:response>
       </d:multistatus>
     XML
+  end
+
+  it "removes displayname via d:remove and returns full 207 response" do
+    mw = TM.new(Caldav::Calendar::Proppatch)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar, displayname: 'RemoveMe')
+    body = <<~XML
+      <d:propertyupdate xmlns:d="DAV:">
+        <d:remove><d:prop>
+          <d:displayname/>
+        </d:prop></d:remove>
+      </d:propertyupdate>
+    XML
+    status, _, resp = mw.call(TM.env('PROPPATCH', '/calendars/admin/cal/', body: body))
+    status.should == 207
+    mw.storage.get_collection('/calendars/admin/cal/')[:displayname].should.be.nil
+    normalize(resp.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/cal/</d:href>
+          <d:propstat>
+            <d:prop/>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "sets and removes properties in a single request" do
+    mw = TM.new(Caldav::Calendar::Proppatch)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar, displayname: 'Keep', description: 'Remove this')
+    body = <<~XML
+      <d:propertyupdate xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:x="http://apple.com/ns/ical/">
+        <d:set><d:prop>
+          <x:calendar-color>#00ff00</x:calendar-color>
+        </d:prop></d:set>
+        <d:remove><d:prop>
+          <c:calendar-description/>
+        </d:prop></d:remove>
+      </d:propertyupdate>
+    XML
+    status, = mw.call(TM.env('PROPPATCH', '/calendars/admin/cal/', body: body))
+    status.should == 207
+    col = mw.storage.get_collection('/calendars/admin/cal/')
+    col[:color].should == '#00ff00'
+    col[:description].should.be.nil
+    col[:displayname].should == 'Keep'
   end
 
   it "updates description and color" do

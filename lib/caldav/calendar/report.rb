@@ -19,7 +19,30 @@ module Caldav
         elsif !env['dav.user'].present?
           [401, { 'content-type' => 'text/plain', 'www-authenticate' => 'Basic realm="caldav"' }, ['Unauthorized']]
         else
-          responses = DavItem.list(path).map do |item|
+          body = request.body.read
+          items = DavItem.list(path)
+
+          # Apply comp-filter if present in the request body
+          if body && !body.empty?
+            comp_names = body.scan(/<[^>]*comp-filter[^>]*name="([^"]*)"/).flatten
+            comp_name = comp_names.reject { |n| n == 'VCALENDAR' }.first
+            if comp_name
+              items = items.select { |item| item.body.include?("BEGIN:#{comp_name}") }
+            end
+
+            # Apply prop-filter/text-match if present
+            prop_name = Xml.extract_attr(body, 'prop-filter', 'name')
+            if prop_name
+              text_match = Xml.extract_value(body, 'text-match')
+              if text_match
+                items = items.select { |item| item.body.include?(text_match) }
+              else
+                items = items.select { |item| item.body.include?(prop_name) }
+              end
+            end
+          end
+
+          responses = items.map do |item|
             item.to_report_xml(data_tag: 'c:calendar-data')
           end
 
@@ -124,6 +147,122 @@ test do
         </d:response>
       </d:multistatus>
     XML
+  end
+
+  # --- Filtering tests (comp-filter, prop-filter, text-match) ---
+
+  it "returns only VEVENT items when comp-filter name=VEVENT" do
+    mw = TM.new(Caldav::Calendar::Report)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    ev = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Meeting\nEND:VEVENT\nEND:VCALENDAR"
+    td = "BEGIN:VCALENDAR\nBEGIN:VTODO\nSUMMARY:Task\nEND:VTODO\nEND:VCALENDAR"
+    mw.storage.put_item('/calendars/admin/cal/ev.ics', ev, 'text/calendar')
+    mw.storage.put_item('/calendars/admin/cal/td.ics', td, 'text/calendar')
+    body = <<~XML
+      <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop><d:getetag/><c:calendar-data/></d:prop>
+        <c:filter>
+          <c:comp-filter name="VCALENDAR">
+            <c:comp-filter name="VEVENT"/>
+          </c:comp-filter>
+        </c:filter>
+      </c:calendar-query>
+    XML
+    status, _, resp = mw.call(TM.env('REPORT', '/calendars/admin/cal/', body: body))
+    status.should == 207
+    normalize(resp.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/cal/ev.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(ev))}</d:getetag>
+              <c:calendar-data>#{Caldav::Xml.escape(ev)}</c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns all items when comp-filter name=VCALENDAR" do
+    mw = TM.new(Caldav::Calendar::Report)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    ev = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nEND:VEVENT\nEND:VCALENDAR"
+    td = "BEGIN:VCALENDAR\nBEGIN:VTODO\nEND:VTODO\nEND:VCALENDAR"
+    mw.storage.put_item('/calendars/admin/cal/ev.ics', ev, 'text/calendar')
+    mw.storage.put_item('/calendars/admin/cal/td.ics', td, 'text/calendar')
+    body = <<~XML
+      <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop><d:getetag/><c:calendar-data/></d:prop>
+        <c:filter>
+          <c:comp-filter name="VCALENDAR"/>
+        </c:filter>
+      </c:calendar-query>
+    XML
+    status, _, resp = mw.call(TM.env('REPORT', '/calendars/admin/cal/', body: body))
+    status.should == 207
+    xml = normalize(resp.first)
+    xml.should.include 'ev.ics'
+    xml.should.include 'td.ics'
+  end
+
+  it "returns items matching prop-filter text-match on SUMMARY" do
+    mw = TM.new(Caldav::Calendar::Report)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    ev1 = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Important Meeting\nEND:VEVENT\nEND:VCALENDAR"
+    ev2 = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Lunch\nEND:VEVENT\nEND:VCALENDAR"
+    mw.storage.put_item('/calendars/admin/cal/ev1.ics', ev1, 'text/calendar')
+    mw.storage.put_item('/calendars/admin/cal/ev2.ics', ev2, 'text/calendar')
+    body = <<~XML
+      <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop><d:getetag/><c:calendar-data/></d:prop>
+        <c:filter>
+          <c:comp-filter name="VCALENDAR">
+            <c:comp-filter name="VEVENT">
+              <c:prop-filter name="SUMMARY">
+                <c:text-match>Important</c:text-match>
+              </c:prop-filter>
+            </c:comp-filter>
+          </c:comp-filter>
+        </c:filter>
+      </c:calendar-query>
+    XML
+    status, _, resp = mw.call(TM.env('REPORT', '/calendars/admin/cal/', body: body))
+    status.should == 207
+    normalize(resp.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/calendars/admin/cal/ev1.ics</d:href>
+          <d:propstat>
+            <d:prop>
+              <d:getetag>#{Caldav::Xml.escape(etag(ev1))}</d:getetag>
+              <c:calendar-data>#{Caldav::Xml.escape(ev1)}</c:calendar-data>
+            </d:prop>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "returns all items with empty filter" do
+    mw = TM.new(Caldav::Calendar::Report)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    ev = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nEND:VEVENT\nEND:VCALENDAR"
+    mw.storage.put_item('/calendars/admin/cal/ev.ics', ev, 'text/calendar')
+    body = <<~XML
+      <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:prop><d:getetag/><c:calendar-data/></d:prop>
+        <c:filter/>
+      </c:calendar-query>
+    XML
+    status, _, resp = mw.call(TM.env('REPORT', '/calendars/admin/cal/', body: body))
+    status.should == 207
+    normalize(resp.first).should.include 'ev.ics'
   end
 
   it "returns empty multistatus for collection with no items" do

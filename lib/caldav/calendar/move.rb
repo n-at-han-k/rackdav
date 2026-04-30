@@ -38,6 +38,22 @@ module Caldav
               if existing && !overwrite
                 [412, { 'content-type' => 'text/plain' }, ['Precondition Failed']]
               else
+                # Check UID conflict in destination collection
+                uid_match = item.body.match(/^UID:(.+)$/i)
+                if uid_match && !existing
+                  uid = uid_match[1].strip
+                  dest_col = to_path.parent.to_s
+                  storage = env['caldav.storage']
+                  if storage.respond_to?(:list_items)
+                    conflict = storage.list_items(dest_col).any? do |ip, id|
+                      ip != path.to_s && id[:body].match?(/^UID:#{Regexp.escape(uid)}$/i)
+                    end
+                    if conflict
+                      return [409, { 'content-type' => 'text/xml; charset=utf-8' }, ['UID conflict']]
+                    end
+                  end
+                end
+
                 item.move_to(to_path)
                 [existing ? 204 : 201, {}, ['']]
               end
@@ -129,6 +145,20 @@ test do
     status.should == 201
     mw.storage.get_item('/calendars/admin/cal/src.ics').should.be.nil
     mw.storage.get_item('/calendars/admin/cal/dst.ics')[:body].should == 'MOVED-DATA'
+  end
+
+  it "returns 409 when moving to collection with same UID" do
+    mw = TM.new(Caldav::Calendar::Move)
+    mw.storage.create_collection('/calendars/admin/cal1/', type: :calendar)
+    mw.storage.create_collection('/calendars/admin/cal2/', type: :calendar)
+    ev1 = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:same-uid\nSUMMARY:A\nEND:VEVENT\nEND:VCALENDAR"
+    ev2 = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:same-uid\nSUMMARY:B\nEND:VEVENT\nEND:VCALENDAR"
+    mw.storage.put_item('/calendars/admin/cal1/ev1.ics', ev1, 'text/calendar')
+    mw.storage.put_item('/calendars/admin/cal2/ev2.ics', ev2, 'text/calendar')
+    env = TM.env('MOVE', '/calendars/admin/cal1/ev1.ics',
+                 headers: { 'Destination' => 'http://localhost/calendars/admin/cal2/ev1.ics' })
+    status, = mw.call(env)
+    status.should == 409
   end
 
   it "moves between different collections" do

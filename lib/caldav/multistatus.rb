@@ -22,7 +22,10 @@ end
 
 test do
   it "wraps a single response in correct multistatus XML" do
-    ms = Caldav::Multistatus.new(['<d:response><d:href>/</d:href></d:response>'])
+    fragment = <<~XML.strip
+      <d:response><d:href>/</d:href></d:response>
+    XML
+    ms = Caldav::Multistatus.new([fragment])
     ms.to_xml.should == <<~XML
       <?xml version="1.0" encoding="UTF-8"?>
       <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
@@ -32,8 +35,12 @@ test do
   end
 
   it "joins multiple responses" do
-    r1 = '<d:response><d:href>/a</d:href></d:response>'
-    r2 = '<d:response><d:href>/b</d:href></d:response>'
+    r1 = <<~XML.strip
+      <d:response><d:href>/a</d:href></d:response>
+    XML
+    r2 = <<~XML.strip
+      <d:response><d:href>/b</d:href></d:response>
+    XML
     ms = Caldav::Multistatus.new([r1, r2])
     ms.to_xml.should == <<~XML
       <?xml version="1.0" encoding="UTF-8"?>

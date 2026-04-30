@@ -30,6 +30,10 @@ module Caldav
             dn = Xml.extract_value(body, 'displayname')
             updates[:displayname] = dn if dn
 
+            if body.include?('<d:remove') || body.include?('<D:remove')
+              updates[:displayname] = nil if body.match?(/<[^>]*remove[^>]*>.*displayname/m) && !dn
+            end
+
             collection.update(updates)
 
             result = Multistatus.new([<<~XML]).to_xml
@@ -89,6 +93,33 @@ test do
     status.should == 207
     headers['content-type'].should == 'text/xml; charset=utf-8'
     mw.storage.get_collection('/addressbooks/admin/addr/')[:displayname].should == 'New'
+    normalize(resp.first).should == normalize(<<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">
+        <d:response>
+          <d:href>/addressbooks/admin/addr/</d:href>
+          <d:propstat>
+            <d:prop/>
+            <d:status>HTTP/1.1 200 OK</d:status>
+          </d:propstat>
+        </d:response>
+      </d:multistatus>
+    XML
+  end
+
+  it "removes displayname via d:remove" do
+    mw = TM.new(Caldav::Contacts::Proppatch)
+    mw.storage.create_collection('/addressbooks/admin/addr/', type: :addressbook, displayname: 'RemoveMe')
+    body = <<~XML
+      <d:propertyupdate xmlns:d="DAV:">
+        <d:remove><d:prop>
+          <d:displayname/>
+        </d:prop></d:remove>
+      </d:propertyupdate>
+    XML
+    status, _, resp = mw.call(TM.env('PROPPATCH', '/addressbooks/admin/addr/', body: body))
+    status.should == 207
+    mw.storage.get_collection('/addressbooks/admin/addr/')[:displayname].should.be.nil
     normalize(resp.first).should == normalize(<<~XML)
       <?xml version="1.0" encoding="UTF-8"?>
       <d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cr="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/" xmlns:x="http://apple.com/ns/ical/">

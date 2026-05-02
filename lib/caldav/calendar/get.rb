@@ -23,7 +23,11 @@ module Caldav
           collection = DavCollection.find(path)
 
           if item
-            [200, { 'content-type' => item.content_type, 'etag' => item.etag }, [item.body]]
+            if env['HTTP_IF_NONE_MATCH'] == item.etag
+              [304, { 'etag' => item.etag, 'cache-control' => 'private, no-cache' }, []]
+            else
+              [200, { 'content-type' => item.content_type, 'etag' => item.etag, 'cache-control' => 'private, no-cache' }, [item.body]]
+            end
           elsif collection
             items = DavItem.list(path)
             bodies = items.map(&:body).join("\n")
@@ -84,5 +88,27 @@ test do
     mw = TM.new(Caldav::Calendar::Get, nil, user: nil)
     status, = mw.call(TM.env('GET', '/calendars/admin/cal/event.ics'))
     status.should == 401
+  end
+
+  it "returns 304 when If-None-Match matches etag" do
+    mw = TM.new(Caldav::Calendar::Get)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    item_data, = mw.storage.put_item('/calendars/admin/cal/event.ics', 'BEGIN:VCALENDAR', 'text/calendar')
+    etag = item_data[:etag]
+    env = TM.env('GET', '/calendars/admin/cal/event.ics', headers: { 'If-None-Match' => etag })
+    status, headers, body = mw.call(env)
+    status.should == 304
+    headers['etag'].should == etag
+    body.should == []
+  end
+
+  it "returns 200 when If-None-Match does not match etag" do
+    mw = TM.new(Caldav::Calendar::Get)
+    mw.storage.create_collection('/calendars/admin/cal/', type: :calendar)
+    mw.storage.put_item('/calendars/admin/cal/event.ics', 'BEGIN:VCALENDAR', 'text/calendar')
+    env = TM.env('GET', '/calendars/admin/cal/event.ics', headers: { 'If-None-Match' => '"stale"' })
+    status, _, body = mw.call(env)
+    status.should == 200
+    body.first.should.include 'VCALENDAR'
   end
 end

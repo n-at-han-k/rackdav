@@ -102,8 +102,14 @@ module Caldav
       prop_lines << "<c:calendar-description>#{Xml.escape(@description)}</c:calendar-description>" if @description
       prop_lines << "<x:calendar-color>#{Xml.escape(@color)}</x:calendar-color>" if @color
 
-      # CTag -- clients use this to detect changes without fetching everything
-      ctag = Digest::SHA256.hexdigest("#{@path}:#{@displayname}:#{@description}:#{@color}")[0..15]
+      # CTag -- clients use this to detect changes without fetching everything.
+      # Incorporates item ETags so the CTag changes when items are added,
+      # modified, or deleted within the collection.
+      item_etags = @path.storage_class.list_items(@path.to_s)
+        .map { |_, data| data[:etag] }
+        .sort
+        .join(":")
+      ctag = Digest::SHA256.hexdigest("#{@path}:#{@displayname}:#{@description}:#{@color}:#{item_etags}")[0..15]
       prop_lines << "<cs:getctag>#{ctag}</cs:getctag>"
 
       if @type == :calendar
@@ -130,8 +136,9 @@ module Caldav
 end
 
 test do
-  def self.ctag(path, displayname, description = nil, color = nil)
-    Digest::SHA256.hexdigest("#{path}:#{displayname}:#{description}:#{color}")[0..15]
+  def self.ctag(storage, path, displayname, description = nil, color = nil)
+    item_etags = storage.list_items(path).map { |_, data| data[:etag] }.sort.join(":")
+    Digest::SHA256.hexdigest("#{path}:#{displayname}:#{description}:#{color}:#{item_etags}")[0..15]
   end
 
   def self.normalize(xml)
@@ -150,7 +157,7 @@ test do
           <d:prop>
             <d:resourcetype><d:collection/></d:resourcetype>
             <d:displayname>Plain</d:displayname>
-            <cs:getctag>#{ctag('/col/', 'Plain')}</cs:getctag>
+            <cs:getctag>#{ctag(s, '/col/', 'Plain')}</cs:getctag>
           </d:prop>
           <d:status>HTTP/1.1 200 OK</d:status>
         </d:propstat>
@@ -170,7 +177,7 @@ test do
           <d:prop>
             <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
             <d:displayname>Work</d:displayname>
-            <cs:getctag>#{ctag('/cal/', 'Work')}</cs:getctag>
+            <cs:getctag>#{ctag(s, '/cal/', 'Work')}</cs:getctag>
             <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
           </d:prop>
           <d:status>HTTP/1.1 200 OK</d:status>
@@ -191,7 +198,7 @@ test do
           <d:prop>
             <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
             <d:displayname>Contacts</d:displayname>
-            <cs:getctag>#{ctag('/addr/', 'Contacts')}</cs:getctag>
+            <cs:getctag>#{ctag(s, '/addr/', 'Contacts')}</cs:getctag>
           </d:prop>
           <d:status>HTTP/1.1 200 OK</d:status>
         </d:propstat>
@@ -213,7 +220,7 @@ test do
             <d:displayname>Work</d:displayname>
             <c:calendar-description>Work events</c:calendar-description>
             <x:calendar-color>#ff0000</x:calendar-color>
-            <cs:getctag>#{ctag('/calendars/admin/work/', 'Work', 'Work events', '#ff0000')}</cs:getctag>
+            <cs:getctag>#{ctag(s, '/calendars/admin/work/', 'Work', 'Work events', '#ff0000')}</cs:getctag>
             <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
           </d:prop>
           <d:status>HTTP/1.1 200 OK</d:status>
@@ -234,7 +241,7 @@ test do
           <d:prop>
             <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
             <d:displayname>Contacts</d:displayname>
-            <cs:getctag>#{ctag('/addressbooks/admin/contacts/', 'Contacts')}</cs:getctag>
+            <cs:getctag>#{ctag(s, '/addressbooks/admin/contacts/', 'Contacts')}</cs:getctag>
           </d:prop>
           <d:status>HTTP/1.1 200 OK</d:status>
         </d:propstat>
@@ -253,7 +260,7 @@ test do
         <d:propstat>
           <d:prop>
             <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
-            <cs:getctag>#{ctag('/cal/', nil)}</cs:getctag>
+            <cs:getctag>#{ctag(s, '/cal/', nil)}</cs:getctag>
             <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
           </d:prop>
           <d:status>HTTP/1.1 200 OK</d:status>
@@ -274,7 +281,7 @@ test do
           <d:prop>
             <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
             <d:displayname>Work &amp; &lt;Personal&gt;</d:displayname>
-            <cs:getctag>#{ctag('/cal/', 'Work & <Personal>')}</cs:getctag>
+            <cs:getctag>#{ctag(s, '/cal/', 'Work & <Personal>')}</cs:getctag>
             <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
           </d:prop>
           <d:status>HTTP/1.1 200 OK</d:status>

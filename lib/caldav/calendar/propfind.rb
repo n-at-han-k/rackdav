@@ -46,7 +46,7 @@ module Caldav
               end
             end
 
-            [207, { 'content-type' => 'text/xml; charset=utf-8' }, [Multistatus.new(responses).to_xml]]
+            [207, { 'content-type' => 'text/xml; charset=utf-8', 'cache-control' => 'no-store' }, [Multistatus.new(responses).to_xml]]
           end
         end
       end
@@ -57,8 +57,9 @@ end
 test do
   TM = Caldav::TestMiddleware
 
-  def self.ctag(path, displayname, description = nil, color = nil)
-    Digest::SHA256.hexdigest("#{path}:#{displayname}:#{description}:#{color}")[0..15]
+  def self.ctag(storage, path, displayname, description = nil, color = nil)
+    item_etags = storage.list_items(path).map { |_, data| data[:etag] }.sort.join(":")
+    Digest::SHA256.hexdigest("#{path}:#{displayname}:#{description}:#{color}:#{item_etags}")[0..15]
   end
 
   def self.etag(body)
@@ -102,7 +103,7 @@ test do
             <d:prop>
               <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
               <d:displayname>My Cal</d:displayname>
-              <cs:getctag>#{ctag('/calendars/admin/cal/', 'My Cal')}</cs:getctag>
+              <cs:getctag>#{ctag(mw.storage, '/calendars/admin/cal/', 'My Cal')}</cs:getctag>
               <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
             </d:prop>
             <d:status>HTTP/1.1 200 OK</d:status>
@@ -151,7 +152,7 @@ test do
           <d:propstat>
             <d:prop>
               <d:resourcetype><d:collection/></d:resourcetype>
-              <cs:getctag>#{ctag('/calendars/admin/', nil)}</cs:getctag>
+              <cs:getctag>#{ctag(mw.storage, '/calendars/admin/', nil)}</cs:getctag>
             </d:prop>
             <d:status>HTTP/1.1 200 OK</d:status>
           </d:propstat>
@@ -162,7 +163,7 @@ test do
             <d:prop>
               <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
               <d:displayname>Cal1</d:displayname>
-              <cs:getctag>#{ctag('/calendars/admin/cal1/', 'Cal1')}</cs:getctag>
+              <cs:getctag>#{ctag(mw.storage, '/calendars/admin/cal1/', 'Cal1')}</cs:getctag>
               <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
             </d:prop>
             <d:status>HTTP/1.1 200 OK</d:status>
@@ -174,7 +175,7 @@ test do
             <d:prop>
               <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
               <d:displayname>Cal2</d:displayname>
-              <cs:getctag>#{ctag('/calendars/admin/cal2/', 'Cal2')}</cs:getctag>
+              <cs:getctag>#{ctag(mw.storage, '/calendars/admin/cal2/', 'Cal2')}</cs:getctag>
               <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
             </d:prop>
             <d:status>HTTP/1.1 200 OK</d:status>
@@ -202,7 +203,7 @@ test do
             <d:prop>
               <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
               <d:displayname>Cal</d:displayname>
-              <cs:getctag>#{ctag('/calendars/admin/cal/', 'Cal')}</cs:getctag>
+              <cs:getctag>#{ctag(mw.storage, '/calendars/admin/cal/', 'Cal')}</cs:getctag>
               <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
             </d:prop>
             <d:status>HTTP/1.1 200 OK</d:status>
@@ -247,7 +248,7 @@ test do
             <d:prop>
               <d:resourcetype><d:collection/><c:calendar/></d:resourcetype>
               <d:displayname>Cal</d:displayname>
-              <cs:getctag>#{ctag('/calendars/admin/cal/', 'Cal')}</cs:getctag>
+              <cs:getctag>#{ctag(mw.storage, '/calendars/admin/cal/', 'Cal')}</cs:getctag>
               <c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>
             </d:prop>
             <d:status>HTTP/1.1 200 OK</d:status>

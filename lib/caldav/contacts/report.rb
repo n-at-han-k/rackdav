@@ -39,7 +39,7 @@ module Caldav
             item.to_report_xml(data_tag: 'cr:address-data')
           end
 
-          [207, { 'content-type' => 'text/xml; charset=utf-8' }, [Multistatus.new(responses).to_xml]]
+          [207, { 'content-type' => 'text/xml; charset=utf-8', 'cache-control' => 'no-store' }, [Multistatus.new(responses).to_xml]]
         end
       end
     end

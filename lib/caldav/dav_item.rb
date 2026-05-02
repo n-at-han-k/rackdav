@@ -4,22 +4,8 @@ require "bundler/setup"
 require "caldav"
 
 module Caldav
-  class DavItem
-    attr_reader :path, :body, :content_type, :etag
-
-    def initialize(path:, body:, content_type:, etag:, new_record: false)
-      @path = path
-      @body = body
-      @content_type = content_type
-      @etag = etag
-      @new_record = new_record
-    end
-
-    def new?
-      @new_record
-    end
-
-    # --- Class methods ---
+  class DavItem < Protocol::Caldav::Item
+    # --- Class methods (storage integration) ---
 
     def self.find(path)
       data = path.storage_class.get_item(path.to_s)
@@ -54,7 +40,7 @@ module Caldav
       end
     end
 
-    # --- Instance methods ---
+    # --- Instance methods (storage integration) ---
 
     def delete
       @path.storage_class.delete_item(@path.to_s)
@@ -69,38 +55,6 @@ module Caldav
         @etag = data[:etag]
         self
       end
-    end
-
-    # --- XML rendering ---
-
-    def to_propfind_xml
-      <<~XML
-        <d:response>
-          <d:href>#{Xml.escape(@path.to_s)}</d:href>
-          <d:propstat>
-            <d:prop>
-              <d:getetag>#{Xml.escape(@etag)}</d:getetag>
-              <d:getcontenttype>#{Xml.escape(@content_type)}</d:getcontenttype>
-            </d:prop>
-            <d:status>HTTP/1.1 200 OK</d:status>
-          </d:propstat>
-        </d:response>
-      XML
-    end
-
-    def to_report_xml(data_tag:)
-      <<~XML
-        <d:response>
-          <d:href>#{Xml.escape(@path.to_s)}</d:href>
-          <d:propstat>
-            <d:prop>
-              <d:getetag>#{Xml.escape(@etag)}</d:getetag>
-              <#{data_tag}>#{Xml.escape(@body)}</#{data_tag}>
-            </d:prop>
-            <d:status>HTTP/1.1 200 OK</d:status>
-          </d:propstat>
-        </d:response>
-      XML
     end
   end
 end

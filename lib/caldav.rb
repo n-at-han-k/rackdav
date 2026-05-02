@@ -9,12 +9,11 @@ require 'digest'
 require 'stringio'
 require 'uri'
 
+$LOAD_PATH.unshift(File.expand_path('../protocol-caldav/lib', __dir__)) unless $LOAD_PATH.any? { |p| p.end_with?('protocol-caldav/lib') }
+require 'protocol/caldav'
+
 module Caldav
-  DAV_HEADERS = {
-    'dav' => '1, 2, 3, calendar-access, addressbook, extended-mkcol',
-    'allow' => 'OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, MKCALENDAR, MKCOL, MOVE, REPORT',
-    'content-type' => 'text/xml; charset=utf-8'
-  }.freeze
+  DAV_HEADERS = Protocol::Caldav::Constants::DAV_HEADERS
 end
 
 # Load order matters: foundational classes first, then middlewares
@@ -30,9 +29,5 @@ end
   caldav/dav_collection
   caldav/dav_item
 ].each { |f| require_relative f }
-
-Dir.glob("#{__dir__}/caldav/{calendar,contacts}/**/*.rb").sort.each do |path|
-  require path
-end
 
 require_relative "caldav/app"

@@ -181,7 +181,7 @@ module Caldav
       end
 
       def compute_etag(body)
-        %("#{Digest::SHA256.hexdigest(body)[0..15]}")
+        Protocol::Caldav::ETag.compute(body)
       end
 
       def guess_content_type(path)

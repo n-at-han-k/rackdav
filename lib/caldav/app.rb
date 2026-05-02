@@ -2,100 +2,13 @@
 
 require "bundler/setup"
 require "caldav"
+require_relative "app2"
 
 module Caldav
-  class App
-    def initialize(storage:)
-      @storage = storage
-      @stack = build_stack
-    end
-
-    def call(env)
-      env['caldav.storage'] = @storage
-      @stack.call(env)
-    end
-
-    private
-
-    def build_stack
-      app = method(:fallback)
-
-      # Contacts middlewares (innermost first, outermost last)
-      app = Contacts::Report.new(app)
-      app = Contacts::Move.new(app)
-      app = Contacts::Delete.new(app)
-      app = Contacts::Head.new(app)
-      app = Contacts::Get.new(app)
-      app = Contacts::Put.new(app)
-      app = Contacts::Mkcol.new(app)
-      app = Contacts::Proppatch.new(app)
-      app = Contacts::Propfind.new(app)
-      app = Contacts::Options.new(app)
-
-      # Calendar middlewares
-      app = Calendar::Report.new(app)
-      app = Calendar::Move.new(app)
-      app = Calendar::Delete.new(app)
-      app = Calendar::Head.new(app)
-      app = Calendar::Get.new(app)
-      app = Calendar::Put.new(app)
-      app = Calendar::Mkcalendar.new(app)
-      app = Calendar::Proppatch.new(app)
-      app = Calendar::Propfind.new(app)
-      Calendar::Options.new(app)
-    end
-
-    def fallback(env)
-      request = Rack::Request.new(env)
-      path = Path.new(request.path_info, storage_class: @storage)
-
-      if request.request_method == 'OPTIONS'
-        [200, DAV_HEADERS.merge('content-length' => '0'), []]
-      elsif !env['dav.user'].present?
-        [401, { 'content-type' => 'text/plain', 'www-authenticate' => 'Basic realm="caldav"' }, ['Unauthorized']]
-      elsif request.request_method == 'PROPFIND'
-        user = env['dav.user']
-        depth = env['HTTP_DEPTH'] || '1'
-
-        # Build discovery properties for root / well-known / principal paths
-        discovery_props = []
-        discovery_props << "<d:current-user-principal><d:href>/#{user}/</d:href></d:current-user-principal>"
-        discovery_props << "<c:calendar-home-set><d:href>/calendars/#{user}/</d:href></c:calendar-home-set>"
-        discovery_props << "<cr:addressbook-home-set><d:href>/addressbooks/#{user}/</d:href></cr:addressbook-home-set>"
-
-        response_xml = <<~XML
-          <d:response>
-            <d:href>#{Xml.escape(path.to_s)}</d:href>
-            <d:propstat>
-              <d:prop>
-                <d:resourcetype><d:collection/></d:resourcetype>
-                #{discovery_props.join("\n              ")}
-              </d:prop>
-              <d:status>HTTP/1.1 200 OK</d:status>
-            </d:propstat>
-          </d:response>
-        XML
-
-        responses = [response_xml]
-
-        if depth == '1'
-          DavCollection.list(path).each do |col|
-            responses << col.to_propfind_xml
-          end
-        end
-
-        [207, { 'content-type' => 'text/xml; charset=utf-8' }, [Multistatus.new(responses).to_xml]]
-      elsif request.request_method == 'GET'
-        if path.to_s == '/' || path.start_with?('/.well-known/')
-          [200, { 'content-type' => 'text/html' }, ['Caldav::App']]
-        else
-          [404, { 'content-type' => 'text/plain' }, ['Not Found']]
-        end
-      else
-        [405, { 'content-type' => 'text/plain' }, ['Method Not Allowed']]
-      end
-    end
-  end
+  # App is now a thin wrapper around App2 (unified dispatch).
+  # The old 19-middleware stack has been replaced by a single class
+  # with handler-per-method dispatch.
+  App = App2
 end
 
 test do
@@ -634,5 +547,91 @@ test do
     env['dav.user'] = 'admin'
     status, _, = app.call(env)
     [207, 301].should.include status
+  end
+
+  # --- HEAD through full stack ---
+
+  it "full stack: HEAD returns same status and headers as GET but empty body" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+
+    env = TM.env('MKCALENDAR', '/calendars/admin/cal/')
+    env['dav.user'] = 'admin'
+    app.call(env)
+
+    env = TM.env('PUT', '/calendars/admin/cal/ev.ics', body: "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:head-test\r\nEND:VEVENT\r\nEND:VCALENDAR", content_type: 'text/calendar')
+    env['dav.user'] = 'admin'
+    _, put_headers, = app.call(env)
+
+    env = TM.env('HEAD', '/calendars/admin/cal/ev.ics')
+    env['dav.user'] = 'admin'
+    status, headers, body = app.call(env)
+    status.should == 200
+    headers['content-type'].should == 'text/calendar'
+    headers['etag'].should == put_headers['etag']
+    body.should == []
+  end
+
+  # --- If-None-Match 304 through full stack ---
+
+  it "full stack: GET with matching If-None-Match returns 304" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+
+    env = TM.env('MKCALENDAR', '/calendars/admin/cal/')
+    env['dav.user'] = 'admin'
+    app.call(env)
+
+    ev = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:etag304\r\nEND:VEVENT\r\nEND:VCALENDAR"
+    env = TM.env('PUT', '/calendars/admin/cal/ev.ics', body: ev, content_type: 'text/calendar')
+    env['dav.user'] = 'admin'
+    _, headers, = app.call(env)
+    etag = headers['etag']
+
+    env = TM.env('GET', '/calendars/admin/cal/ev.ics', headers: { 'If-None-Match' => etag })
+    env['dav.user'] = 'admin'
+    status, headers, body = app.call(env)
+    status.should == 304
+    headers['etag'].should == etag
+    body.should == []
+  end
+
+  # --- Cross-path method tests ---
+
+  it "MKCALENDAR on /addressbooks/ path creates a calendar there (no path guard)" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+
+    body = <<~XML
+      <c:mkcalendar xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+        <d:set><d:prop>
+          <d:displayname>Misplaced</d:displayname>
+        </d:prop></d:set>
+      </c:mkcalendar>
+    XML
+    env = TM.env('MKCALENDAR', '/addressbooks/admin/misplaced/', body: body)
+    env['dav.user'] = 'admin'
+    status, = app.call(env)
+    # Current behavior: MKCALENDAR middleware has no path guard, so this succeeds
+    status.should == 201
+  end
+
+  it "MKCOL on /calendars/ path creates a collection there (no path guard)" do
+    mock = Caldav::Storage::Mock.new
+    app = Caldav::App.new(storage: mock)
+
+    body = <<~XML
+      <d:mkcol xmlns:d="DAV:" xmlns:cr="urn:ietf:params:xml:ns:carddav">
+        <d:set><d:prop>
+          <d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>
+          <d:displayname>Misplaced</d:displayname>
+        </d:prop></d:set>
+      </d:mkcol>
+    XML
+    env = TM.env('MKCOL', '/calendars/admin/misplaced/', body: body)
+    env['dav.user'] = 'admin'
+    status, = app.call(env)
+    # Current behavior: MKCOL middleware has no path guard, so this succeeds
+    status.should == 201
   end
 end

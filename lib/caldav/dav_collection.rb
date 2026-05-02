@@ -4,19 +4,8 @@ require "bundler/setup"
 require "caldav"
 
 module Caldav
-  class DavCollection
-    attr_reader :path, :type, :displayname, :description, :color, :props
-
-    def initialize(path:, type: :collection, displayname: nil, description: nil, color: nil, props: {})
-      @path = path
-      @type = type
-      @displayname = displayname
-      @description = description
-      @color = color
-      @props = props || {}
-    end
-
-    # --- Class methods ---
+  class DavCollection < Protocol::Caldav::Collection
+    # --- Class methods (storage integration) ---
 
     def self.find(path)
       data = path.storage_class.get_collection(path.to_s)
@@ -68,69 +57,17 @@ module Caldav
       end
     end
 
-    # --- Instance methods ---
+    # --- Instance methods (storage integration) ---
 
     def update(updates)
       data = @path.storage_class.update_collection(@path.to_s, updates)
       if data
-        @displayname = data[:displayname]
-        @description = data[:description]
-        @color = data[:color]
-        @props = data[:props] || {}
-        self
+        update_attrs(data)
       end
     end
 
     def delete
       @path.storage_class.delete_collection(@path.to_s)
-    end
-
-    # --- XML rendering ---
-
-    def to_propfind_xml
-      prop_lines = []
-
-      if @type == :calendar
-        prop_lines << '<d:resourcetype><d:collection/><c:calendar/></d:resourcetype>'
-      elsif @type == :addressbook
-        prop_lines << '<d:resourcetype><d:collection/><cr:addressbook/></d:resourcetype>'
-      else
-        prop_lines << '<d:resourcetype><d:collection/></d:resourcetype>'
-      end
-
-      prop_lines << "<d:displayname>#{Xml.escape(@displayname)}</d:displayname>" if @displayname
-      prop_lines << "<c:calendar-description>#{Xml.escape(@description)}</c:calendar-description>" if @description
-      prop_lines << "<x:calendar-color>#{Xml.escape(@color)}</x:calendar-color>" if @color
-
-      # CTag -- clients use this to detect changes without fetching everything.
-      # Incorporates item ETags so the CTag changes when items are added,
-      # modified, or deleted within the collection.
-      item_etags = @path.storage_class.list_items(@path.to_s)
-        .map { |_, data| data[:etag] }
-        .sort
-        .join(":")
-      ctag = Digest::SHA256.hexdigest("#{@path}:#{@displayname}:#{@description}:#{@color}:#{item_etags}")[0..15]
-      prop_lines << "<cs:getctag>#{ctag}</cs:getctag>"
-
-      if @type == :calendar
-        prop_lines << '<c:supported-calendar-component-set><c:comp name="VEVENT"/><c:comp name="VTODO"/><c:comp name="VJOURNAL"/></c:supported-calendar-component-set>'
-      end
-
-      @props.each do |key, value|
-        prop_lines << "<#{key}>#{Xml.escape(value)}</#{key}>"
-      end
-
-      <<~XML
-        <d:response>
-          <d:href>#{Xml.escape(@path.to_s)}</d:href>
-          <d:propstat>
-            <d:prop>
-              #{prop_lines.join("\n          ")}
-            </d:prop>
-            <d:status>HTTP/1.1 200 OK</d:status>
-          </d:propstat>
-        </d:response>
-      XML
     end
   end
 end

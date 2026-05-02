@@ -67,7 +67,7 @@ module Caldav
       end
 
       def put_item(path, body, content_type)
-        etag = %("#{Digest::SHA256.hexdigest(body)[0..15]}")
+        etag = Protocol::Caldav::ETag.compute(body)
         is_new = !@items.key?(path)
         item = { body: body, content_type: content_type, etag: etag }
         @items[path] = item

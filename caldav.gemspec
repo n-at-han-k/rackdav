@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
-require_relative 'lib/caldav/version'
+require_relative 'lib/async/caldav/version'
 
 Gem::Specification.new do |spec|
   spec.name = 'caldav'
-  spec.version = Caldav::VERSION
+  spec.version = Async::Caldav::VERSION
   spec.authors = ['Nathan K']
   spec.email = ['nathankidd@hey.com']
 
-  spec.summary = 'rack caldav server'
+  spec.summary = 'CalDAV/CardDAV server'
 
   spec.description = <<~DESC
-    Clone the repo and run bin/rename-gem and you have a gem.
+    CalDAV/CardDAV server. Umbrella gem that pulls in protocol-caldav and async-caldav.
   DESC
 
   spec.homepage = 'https://github.com/n-at-han-k/caldav'
@@ -29,14 +29,8 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'rack', '~> 3.0'
+  spec.add_dependency 'rexml'
   spec.add_dependency "scampi", "~> 0.1.7"
-  spec.add_dependency "activesupport", "~> 8.1"
-  spec.add_dependency "rexml"
 
-  spec.add_development_dependency 'rack-test', '~> 2.0'
   spec.add_development_dependency 'base64'
-  spec.add_development_dependency 'falcon'
-  spec.add_development_dependency 'rackup'
-
 end

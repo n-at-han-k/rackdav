@@ -159,6 +159,10 @@ strip_etag() {
   sed 's/<d:getetag>[^<]*<\/d:getetag>/<d:getetag>ETAG<\/d:getetag>/g'
 }
 
+strip_sync_token() {
+  sed 's/<d:sync-token>[^<]*<\/d:sync-token>//g'
+}
+
 echo "# Integration tests against ${BASE_URL}"
 echo ""
 
@@ -353,7 +357,7 @@ test_name="PROPFIND calendar collection depth 0 returns full response"
 result=$(dav_full PROPFIND /calendars/admin/inttest/ -H "Depth: 0" -H "Content-Type: text/xml")
 actual_status=$(echo "$result" | head -1)
 actual_body=$(echo "$result" | tail -n +2)
-actual_body_stripped=$(echo "$actual_body" | strip_ctag)
+actual_body_stripped=$(echo "$actual_body" | strip_ctag | strip_sync_token)
 
 expected_body=$(cat <<'XML' | strip_ctag
 <?xml version="1.0" encoding="UTF-8"?>
@@ -1057,7 +1061,7 @@ test_name="PROPFIND addressbook at depth 0 returns full response"
 result=$(dav_full PROPFIND /addressbooks/admin/inttest/ -H "Depth: 0" -H "Content-Type: text/xml")
 actual_status=$(echo "$result" | head -1)
 actual_body=$(echo "$result" | tail -n +2)
-actual_body_stripped=$(echo "$actual_body" | strip_ctag)
+actual_body_stripped=$(echo "$actual_body" | strip_ctag | strip_sync_token)
 
 expected_body=$(cat <<'XML' | strip_ctag
 <?xml version="1.0" encoding="UTF-8"?>
